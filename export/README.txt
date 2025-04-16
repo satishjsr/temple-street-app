@@ -1,0 +1,1 @@
+This folder will contain export files like purchase and kitchen plans.
