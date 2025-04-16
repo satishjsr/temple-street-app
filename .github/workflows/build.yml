@@ -1,9 +1,9 @@
 name: Build Temple Street App (.exe)
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [created]
+
 
 jobs:
   build:
