@@ -1,0 +1,31 @@
+name: Build Temple Street App (.exe)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller pandas openpyxl
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onefile app/forecast_engine.py
+      - name: Upload .exe to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./dist/forecast_engine.exe
+          asset_name: TempleStreetApp.exe
+          asset_content_type: application/octet-stream
