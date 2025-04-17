@@ -4,7 +4,6 @@ on:
   release:
     types: [created]
 
-
 jobs:
   build:
     runs-on: windows-latest
@@ -15,17 +14,6 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install dependencies
-        run: |
-          pip install pyinstaller pandas openpyxl
+        run: pip install pyinstaller
       - name: Build with PyInstaller
-        run: |
-          pyinstaller --onefile app/forecast_engine.py
-      - name: Upload .exe to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./dist/forecast_engine.exe
-          asset_name: TempleStreetApp.exe
-          asset_content_type: application/octet-stream
+        run: pyinstaller --onefile --icon=assets/temple-street.ico main.py
