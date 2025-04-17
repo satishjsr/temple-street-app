@@ -1,3 +1,4 @@
+
 name: Build Temple Street App (.exe)
 
 on:
@@ -17,4 +18,3 @@ jobs:
         run: pip install pyinstaller
       - name: Build with PyInstaller
         run: pyinstaller --onefile main.py
-
