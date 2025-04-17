@@ -16,4 +16,5 @@ jobs:
       - name: Install dependencies
         run: pip install pyinstaller
       - name: Build with PyInstaller
-        run: pyinstaller --onefile --icon=assets/temple-street.ico main.py
+        run: pyinstaller --onefile main.py
+
