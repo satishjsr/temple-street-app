@@ -60,10 +60,24 @@ class TempleStreetApp:
             self.file_path = file_path
             self.status.config(text=f"File loaded: {os.path.basename(file_path)}", fg="green")
 
-            # Ask outlet name upfront
-            self.selected_outlet = simpledialog.askstring("Outlet", "Enter Outlet Name (e.g., Rajendra Nagar, Tilak Nagar):")
+            # Show outlet selection popup
+            self.outlet_window = tk.Toplevel(self.root)
+            self.outlet_window.title("Select Outlet")
+            tk.Label(self.outlet_window, text="Choose your outlet:").pack(pady=10)
 
-            self.process_btn.config(state=tk.NORMAL)
+            outlet_var = tk.StringVar(self.outlet_window)
+            outlet_var.set("Rajendra Nagar")  # default
+
+            dropdown = tk.OptionMenu(self.outlet_window, outlet_var, "Rajendra Nagar", "Tilak Nagar")
+            dropdown.pack(pady=5)
+
+            def confirm_outlet():
+                self.selected_outlet = outlet_var.get()
+                self.outlet_window.destroy()
+                self.process_btn.config(state=tk.NORMAL)
+
+            confirm_btn = tk.Button(self.outlet_window, text="Confirm", command=confirm_outlet)
+            confirm_btn.pack(pady=10)
 
     def run_forecast_thread(self):
         self.progress.pack(pady=10)
