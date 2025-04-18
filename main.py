@@ -10,11 +10,10 @@ class TempleStreetApp:
         self.root = root
         self.root.title("Temple Street Ordering System")
         self.root.geometry("400x350")
-        self.root.iconbitmap("assets/temple-street.ico")try:
-    self.root.iconbitmap("assets/temple-street.ico")
-except:
-    print("⚠️ Icon not found. Running without custom icon.")
-  # Icon path
+        try:
+            self.root.iconbitmap("assets/temple-street.ico")
+        except:
+            print("⚠️ Icon not found. Running without custom icon.")  # Icon path
 
         self.label = tk.Label(root, text="Temple Street Ordering System v1.0.0", font=("Helvetica", 14, "bold"), pady=10)
         self.label.pack()
