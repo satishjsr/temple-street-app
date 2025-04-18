@@ -150,9 +150,14 @@ class TempleStreetApp:
                 raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
                 raw_summary = raw_summary[raw_summary['RequiredQty'] > 0]
 
+                if raw_summary.empty:
+                    print("⚠️ No raw materials forecasted. Please check item-recipe mapping or quantities.")
+
                 export_file = f"export/{outlet}_Forecast_{future_date}.xlsx"
                 raw_summary.to_excel(export_file, index=False)
                 print(f"✅ Exported: {export_file}")
+                if self.role == "admin":
+                    webbrowser.open(os.path.abspath("export"))
 
             self.root.after(0, lambda: messagebox.showinfo("Success", "Forecast files saved in export folder."))
             self.root.after(0, lambda: self.status.config(text="✅ Forecast generated successfully!", fg="darkgreen"))
