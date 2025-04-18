@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 import threading
 import webbrowser
+import subprocess
 
 USERS = {
     "admin": "admin123",
@@ -18,10 +19,13 @@ class TempleStreetApp:
         self.root.title("Temple Street Ordering System")
         self.root.geometry("400x480")
 
-        try:
-            self.root.iconbitmap("assets/temple-street.ico")
-        except:
-            print("⚠️ Icon not found. Running without custom icon.")
+        # Icon fail-safe
+        icon_path = os.path.join("assets", "temple-street.ico")
+        if os.path.exists(icon_path):
+            try:
+                self.root.iconbitmap(icon_path)
+            except:
+                print("⚠️ Icon load failed in runtime.")
 
         self.label = tk.Label(root, text=f"Temple Street System ({role.title()})", font=("Helvetica", 14, "bold"), pady=10)
         self.label.pack()
@@ -78,60 +82,4 @@ class TempleStreetApp:
         else:
             messagebox.showwarning("Missing", "Export folder does not exist yet.")
 
-    def process_file(self):
-        try:
-            df = pd.read_excel(self.file_path)
-
-            adjust = float(self.adjust_entry.get())
-            df["Forecast"] = "Coming Soon"
-            if adjust != 100:
-                df["Forecast"] += f" ({adjust}% planned)"
-
-            output_dir = "export"
-            os.makedirs(output_dir, exist_ok=True)
-            filename = f"Temple_Street_Plan_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
-            output_file = os.path.join(output_dir, filename)
-
-            df.to_excel(output_file, index=False)
-
-            self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast saved to:\n{output_file}"))
-            self.root.after(0, lambda: self.status.config(text="✅ Forecast generated successfully!", fg="darkgreen"))
-
-        except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Error", f"Failed to generate forecast:\n{e}"))
-            self.root.after(0, lambda: self.status.config(text="Error occurred", fg="red"))
-        finally:
-            self.root.after(0, self.progress.stop)
-            self.root.after(0, self.progress.pack_forget)
-
-
-def login_and_start():
-    login_root = tk.Tk()
-    login_root.title("Login")
-    login_root.geometry("300x200")
-
-    tk.Label(login_root, text="Username").pack(pady=5)
-    username_entry = tk.Entry(login_root)
-    username_entry.pack()
-
-    tk.Label(login_root, text="Password").pack(pady=5)
-    password_entry = tk.Entry(login_root, show="*")
-    password_entry.pack()
-
-    def attempt_login():
-        username = username_entry.get()
-        password = password_entry.get()
-        if username in USERS and USERS[username] == password:
-            login_root.destroy()
-            root = tk.Tk()
-            app = TempleStreetApp(root, role=username)
-            root.mainloop()
-        else:
-            messagebox.showerror("Login Failed", "Invalid username or password")
-
-    tk.Button(login_root, text="Login", command=attempt_login).pack(pady=10)
-    login_root.mainloop()
-
-
-if __name__ == "__main__":
-    login_and_start()
+# Email automation and .env loading removed as requested
