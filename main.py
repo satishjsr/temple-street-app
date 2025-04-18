@@ -18,6 +18,7 @@ class TempleStreetApp:
         self.root.title("Temple Street Ordering System")
         self.root.geometry("400x500")
 
+        # Icon fail-safe
         icon_path = os.path.join("assets", "temple-street.ico")
         if os.path.exists(icon_path):
             try:
@@ -31,7 +32,7 @@ class TempleStreetApp:
         self.status = tk.Label(root, text="Status: Waiting for file", fg="blue")
         self.status.pack(pady=10)
 
-        self.import_btn = tk.Button(root, text="📂 Import Sales Excel File", command=self.import_file)
+        self.import_btn = tk.Button(root, text="📂 Import Item Sales Excel File", command=self.import_file)
         self.import_btn.pack(pady=5)
 
         self.adjust_label = tk.Label(root, text="Optional: Adjust forecast % (e.g., 110 for 10% more)")
@@ -128,6 +129,7 @@ class TempleStreetApp:
         else:
             return "Other"
 
+
 def prompt_login():
     login_window = tk.Tk()
     login_window.withdraw()
@@ -145,6 +147,7 @@ def prompt_login():
     root = tk.Tk()
     app = TempleStreetApp(root, role=username)
     root.mainloop()
+
 
 if __name__ == "__main__":
     prompt_login()
