@@ -140,11 +140,19 @@ class TempleStreetApp:
                     raise ValueError("None of the 'Item' entries from sales matched the recipe sheet. Check spelling/casing.")
                 merged_df['IngredientQty'] = merged_df['IngredientQty'].fillna(0)
                 merged_df['RequiredQty'] = merged_df['ForecastQty'] * merged_df['IngredientQty']
+                matched_items = merged_df[~merged_df['Ingredient'].isna()]['Item'].unique()
+                unmatched_items = outlet_df[~outlet_df['Item'].isin(matched_items)]
+                if not unmatched_items.empty:
+                    unmatched_export = f"export/{outlet}_Unmatched_Items_{future_date}.xlsx"
+                    unmatched_items[['Item', 'Quantity']].drop_duplicates().to_excel(unmatched_export, index=False)
+                    print(f"⚠️ Exported unmatched items to {unmatched_export}")
+
                 raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
                 raw_summary = raw_summary[raw_summary['RequiredQty'] > 0]
 
                 export_file = f"export/{outlet}_Forecast_{future_date}.xlsx"
                 raw_summary.to_excel(export_file, index=False)
+                print(f"✅ Exported: {export_file}")
 
             self.root.after(0, lambda: messagebox.showinfo("Success", "Forecast files saved in export folder."))
             self.root.after(0, lambda: self.status.config(text="✅ Forecast generated successfully!", fg="darkgreen"))
