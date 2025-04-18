@@ -101,13 +101,16 @@ class TempleStreetApp:
     def process_file(self):
         try:
             recipe_df = pd.read_excel("Recipe_Report_2025_04_02_11_07_15.xlsx")
+            print("DEBUG: Recipe DF Columns →", recipe_df.columns.tolist())
+            if "Item" not in recipe_df.columns:
+                raise ValueError("❌ 'Item' column missing in Recipe file. Please ensure the column name is exactly 'Item'.")
             recipe_df = recipe_df.rename(columns={"Item": "Item", "Ingredient": "Ingredient", "Qty": "IngredientQty", "UOM": "UOM"})
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load Recipe Report:\n{e}")
             return
 
         try:
-            df = pd.read_excel(self.file_path, skiprows=5)
+            df = pd.read_excel(self.file_path, skiprows=6)
             print("DEBUG: Columns in uploaded file:", df.columns.tolist())
             if not ("Item" in df.columns and "Qty." in df.columns):
                 raise ValueError("Excel file must contain 'Item' and 'Qty.' columns after row 5.")
