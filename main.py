@@ -103,7 +103,9 @@ class TempleStreetApp:
         try:
             df = pd.read_excel(self.file_path, skiprows=5)
             df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
-            df = df[["Item", "Quantity"]]  # Filter only necessary columns
+            # Retain Quantity and Outlet before filtering
+            df = df[["Item", "Quantity"]].copy()
+            df["Outlet"] = self.selected_outlet  # Filter only necessary columns
             df["Outlet"] = self.selected_outlet  # Add selected outlet manually
             forecast_factor = float(self.adjust_entry.get()) / 100.0
 
@@ -114,14 +116,11 @@ class TempleStreetApp:
 
             for outlet in outlets:
                 outlet_df = df[df['Outlet'] == outlet].copy()
-
-                # Tag cuisine
                 outlet_df['Cuisine'] = outlet_df['Item'].apply(self.identify_cuisine)
+                outlet_df['ForecastQty'] = (outlet_df['Quantity'] * forecast_factor).round().astype(int)
+                outlet_df['AdjustedQty'] = outlet_df['ForecastQty']
 
-                # Apply forecast factor
-                if 'Quantity' in outlet_df.columns:
-                    outlet_df['ForecastQty'] = (outlet_df['Quantity'] * forecast_factor).round().astype(int)
-                    outlet_df['AdjustedQty'] = outlet_df['ForecastQty']  # Staff can manually override this column
+                '] = outlet_df['ForecastQty']  # Staff can manually override this column
 
                 # Filter out zero or missing forecast
                 outlet_df = outlet_df[outlet_df['ForecastQty'] > 0]
