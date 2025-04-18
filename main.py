@@ -18,7 +18,6 @@ class TempleStreetApp:
         self.root.title("Temple Street Ordering System")
         self.root.geometry("400x500")
 
-        # Icon fail-safe
         icon_path = os.path.join("assets", "temple-street.ico")
         if os.path.exists(icon_path):
             try:
@@ -108,8 +107,11 @@ class TempleStreetApp:
 
         try:
             df = pd.read_excel(self.file_path, skiprows=5)
-            df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
+            print("DEBUG: Columns in uploaded file:", df.columns.tolist())  # 👈 LOG for Debugging
+            if not ("Item" in df.columns and "Qty." in df.columns):
+                raise ValueError("Excel file must contain 'Item' and 'Qty.' columns after row 5.")
 
+            df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
             df = df[["Item", "Quantity"]].copy()
             df["Outlet"] = self.selected_outlet
 
