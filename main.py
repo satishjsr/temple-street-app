@@ -100,14 +100,13 @@ class TempleStreetApp:
             messagebox.showwarning("Missing", "Export folder does not exist yet.")
 
     def process_file(self):
-        # Load Recipe Report (BOM)
         try:
             recipe_df = pd.read_excel("Recipe_Report_2025_04_02_11_07_15.xlsx")
             recipe_df = recipe_df.rename(columns={"Item": "Item", "Ingredient": "Ingredient", "Qty": "IngredientQty", "UOM": "UOM"})
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load Recipe Report:
-{e}")
+            messagebox.showerror("Error", f"Failed to load Recipe Report:\n{e}")
             return
+
         try:
             df = pd.read_excel(self.file_path, skiprows=5)
             df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
@@ -126,7 +125,6 @@ class TempleStreetApp:
                 outlet_df['ForecastQty'] = (outlet_df['Quantity'] ** 1.01 + 2).round().astype(int)
                 outlet_df['AdjustedQty'] = (outlet_df['ForecastQty'] * adjusted_factor).round().astype(int)
 
-                # Expand item forecasts into raw ingredients
                 merged_df = pd.merge(outlet_df, recipe_df, on='Item', how='left')
                 merged_df['RequiredQty'] = merged_df['ForecastQty'] * merged_df['IngredientQty']
                 raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
@@ -156,7 +154,6 @@ class TempleStreetApp:
         else:
             return "Other"
 
-
 def prompt_login():
     login_window = tk.Tk()
     login_window.withdraw()
@@ -174,7 +171,6 @@ def prompt_login():
     root = tk.Tk()
     app = TempleStreetApp(root, role=username)
     root.mainloop()
-
 
 if __name__ == "__main__":
     prompt_login()
