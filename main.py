@@ -100,11 +100,24 @@ class TempleStreetApp:
 
     def process_file(self):
         try:
-            recipe_df = pd.read_excel("Recipe_Report_2025_04_02_11_07_15.xlsx")
+            recipe_df = pd.read_excel("Recipe_Report_2025_04_18_11_01_56.xlsx")
+            long_format = []
+            for i in range(1, 20):  # Assuming up to 20 ingredients max per item
+                ing_col = f"RawMaterial{i}"
+                qty_col = f"Qty{i}"
+                uom_col = f"UOM{i}"
+                if ing_col in recipe_df.columns:
+                    block = recipe_df[["ItemName", ing_col, qty_col, uom_col]].copy()
+                    block.columns = ["Final Item", "Ingredient", "Qty", "UOM"]
+                    long_format.append(block)
+            recipe_df = pd.concat(long_format)
+            recipe_df = recipe_df.dropna(subset=["Ingredient", "Qty"])
+            print("DEBUG: Converted wide recipe to vertical format:", recipe_df.head())
             print("DEBUG: Recipe DF Columns →", recipe_df.columns.tolist())
-            if "Final Item" not in recipe_df.columns:
+            # Skip check as we manually extracted Final Item from ItemName
                 raise ValueError("❌ 'Item' column missing in Recipe file. Please ensure the column name is exactly 'Item'.")
-            recipe_df = recipe_df.rename(columns={"Final Item": "Item", "Ingredient": "Ingredient", "Qty": "IngredientQty", "UOM": "UOM"})
+            recipe_df["Item"] = recipe_df["Final Item"].str.strip().str.lower()
+            recipe_df = recipe_df.rename(columns={"Ingredient": "Ingredient", "Qty": "IngredientQty", "UOM": "UOM"})
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load Recipe Report:\n{e}")
             return
