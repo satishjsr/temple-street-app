@@ -59,6 +59,10 @@ class TempleStreetApp:
         if file_path:
             self.file_path = file_path
             self.status.config(text=f"File loaded: {os.path.basename(file_path)}", fg="green")
+
+            # Ask outlet name upfront
+            self.selected_outlet = simpledialog.askstring("Outlet", "Enter Outlet Name (e.g., Rajendra Nagar, Tilak Nagar):")
+
             self.process_btn.config(state=tk.NORMAL)
 
     def run_forecast_thread(self):
@@ -83,7 +87,10 @@ class TempleStreetApp:
 
     def process_file(self):
         try:
-            df = pd.read_excel(self.file_path)
+            df = pd.read_excel(self.file_path, skiprows=5)
+            df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
+            df = df[["Item", "Quantity"]]  # Filter only necessary columns
+            df["Outlet"] = self.selected_outlet  # Add selected outlet manually
             forecast_factor = float(self.adjust_entry.get()) / 100.0
 
             # Split by outlet
