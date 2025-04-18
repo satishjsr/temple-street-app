@@ -7,21 +7,24 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Set up Python
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
-        run: pip install pyinstaller
+      - name: 📦 Install Dependencies
+        run: pip install pyinstaller pandas openpyxl
 
-      - name: Build with PyInstaller
-        run: pyinstaller --onefile --icon=assets/temple-street.ico main.py
+      - name: 🏗️ Build with PyInstaller
+        run: |
+          pyinstaller --noconfirm --onefile --windowed --add-data "assets/temple-street.ico;assets" --icon=assets/temple-street.ico main.py
 
-      - name: Upload .exe to release
+      - name: 📤 Upload .exe to Release
         uses: softprops/action-gh-release@v1
         with:
           files: dist/main.exe
