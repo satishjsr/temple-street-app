@@ -102,7 +102,7 @@ class TempleStreetApp:
         try:
             recipe_df = pd.read_excel("Recipe_Report_2025_04_18_11_01_56.xlsx")
             long_format = []
-            for i in range(1, 20):  # Assuming up to 20 ingredients max per item
+            for i in range(1, 20):
                 ing_col = f"RawMaterial{i}"
                 qty_col = f"Qty{i}"
                 uom_col = f"UOM{i}"
@@ -112,10 +112,6 @@ class TempleStreetApp:
                     long_format.append(block)
             recipe_df = pd.concat(long_format)
             recipe_df = recipe_df.dropna(subset=["Ingredient", "Qty"])
-            print("DEBUG: Converted wide recipe to vertical format:", recipe_df.head())
-            print("DEBUG: Recipe DF Columns →", recipe_df.columns.tolist())
-            # Skip check as we manually extracted Final Item from ItemName
-                raise ValueError("❌ 'Item' column missing in Recipe file. Please ensure the column name is exactly 'Item'.")
             recipe_df["Item"] = recipe_df["Final Item"].str.strip().str.lower()
             recipe_df = recipe_df.rename(columns={"Ingredient": "Ingredient", "Qty": "IngredientQty", "UOM": "UOM"})
         except Exception as e:
@@ -124,16 +120,13 @@ class TempleStreetApp:
 
         try:
             df = pd.read_excel(self.file_path, skiprows=6)
-            print("DEBUG: Columns in uploaded file:", df.columns.tolist())
             if not ("Item" in df.columns and "Qty." in df.columns):
                 raise ValueError("Excel file must contain 'Item' and 'Qty.' columns after row 5.")
             df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
-
             df = df[["Item", "Quantity"]].copy()
             df["Outlet"] = self.selected_outlet
 
             adjusted_factor = float(self.adjust_entry.get()) / 100.0
-
             outlets = df['Outlet'].unique()
             future_date = (datetime.now() + pd.Timedelta(days=2)).strftime('%Y-%m-%d')
             os.makedirs("export", exist_ok=True)
@@ -146,11 +139,11 @@ class TempleStreetApp:
 
                 outlet_df['Item'] = outlet_df['Item'].str.strip().str.lower()
                 recipe_df['Item'] = recipe_df['Item'].str.strip().str.lower()
-                print("DEBUG: Outlet Items:", outlet_df['Item'].unique().tolist())
-                print("DEBUG: Recipe Items:", recipe_df['Item'].unique().tolist())
                 merged_df = pd.merge(outlet_df, recipe_df, on='Item', how='left')
+
                 if merged_df['IngredientQty'].isna().all():
                     raise ValueError("None of the 'Item' entries from sales matched the recipe sheet. Check spelling/casing.")
+
                 merged_df['IngredientQty'] = merged_df['IngredientQty'].fillna(0)
                 merged_df['RequiredQty'] = merged_df['ForecastQty'] * merged_df['IngredientQty']
                 matched_items = merged_df[~merged_df['Ingredient'].isna()]['Item'].unique()
@@ -158,22 +151,16 @@ class TempleStreetApp:
                 if not unmatched_items.empty:
                     unmatched_export = f"export/{outlet}_Unmatched_Items_{future_date}.xlsx"
                     unmatched_items[['Item', 'Quantity']].drop_duplicates().to_excel(unmatched_export, index=False)
-                    print(f"⚠️ Exported unmatched items to {unmatched_export}")
 
-                # Export merged debug view
                 debug_export = f"export/{outlet}_Merged_Debug_{future_date}.xlsx"
                 merged_df.to_excel(debug_export, index=False)
-                print(f"🛠️ Exported merged debug data to {debug_export}")
 
                 raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
                 raw_summary = raw_summary[raw_summary['RequiredQty'] > 0]
 
-                if raw_summary.empty:
-                    print("⚠️ No raw materials forecasted. Please check item-recipe mapping or quantities.")
-
                 export_file = f"export/{outlet}_Forecast_{future_date}.xlsx"
                 raw_summary.to_excel(export_file, index=False)
-                print(f"✅ Exported: {export_file}")
+
                 if self.role == "admin":
                     webbrowser.open(os.path.abspath("export"))
 
