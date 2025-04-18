@@ -18,6 +18,7 @@ class TempleStreetApp:
         self.root.title("Temple Street Ordering System")
         self.root.geometry("400x500")
 
+        # Icon fail-safe
         icon_path = os.path.join("assets", "temple-street.ico")
         if os.path.exists(icon_path):
             try:
@@ -107,11 +108,11 @@ class TempleStreetApp:
 
         try:
             df = pd.read_excel(self.file_path, skiprows=5)
-            print("DEBUG: Columns in uploaded file:", df.columns.tolist())  # 👈 LOG for Debugging
+            print("DEBUG: Columns in uploaded file:", df.columns.tolist())
             if not ("Item" in df.columns and "Qty." in df.columns):
                 raise ValueError("Excel file must contain 'Item' and 'Qty.' columns after row 5.")
-
             df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
+
             df = df[["Item", "Quantity"]].copy()
             df["Outlet"] = self.selected_outlet
 
@@ -129,7 +130,11 @@ class TempleStreetApp:
 
                 outlet_df['Item'] = outlet_df['Item'].str.strip().str.lower()
                 recipe_df['Item'] = recipe_df['Item'].str.strip().str.lower()
+                print("DEBUG: Outlet Items:", outlet_df['Item'].unique().tolist())
+                print("DEBUG: Recipe Items:", recipe_df['Item'].unique().tolist())
                 merged_df = pd.merge(outlet_df, recipe_df, on='Item', how='left')
+                if merged_df['IngredientQty'].isna().all():
+                    raise ValueError("None of the 'Item' entries from sales matched the recipe sheet. Check spelling/casing.")
                 merged_df['IngredientQty'] = merged_df['IngredientQty'].fillna(0)
                 merged_df['RequiredQty'] = merged_df['ForecastQty'] * merged_df['IngredientQty']
                 raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
