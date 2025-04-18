@@ -18,11 +18,30 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas openpyxl
+          pip install pandas openpyxl tk
+
+      - name: Check icon existence
+        id: check_icon
+        run: |
+          if [ -f "assets/temple-street.ico" ]; then
+            echo "ICON_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "ICON_EXISTS=false" >> $GITHUB_ENV
+          fi
 
       - name: Build .exe with PyInstaller
         run: |
-          pyinstaller --noconfirm --onefile --windowed --icon=assets/temple-street.ico main.py
+          if [ "$ICON_EXISTS" = "true" ]; then
+            pyinstaller --noconfirm --onefile --windowed --clean --icon=assets/temple-street.ico main.py
+          else
+            echo "⚠️ Icon not found. Building without icon..."
+            pyinstaller --noconfirm --onefile --windowed --clean main.py
+          fi
+
+      - name: Debug dist folder (optional)
+        run: |
+          echo "Listing dist/"
+          dir dist
 
       - name: Upload .exe to GitHub Release
         uses: softprops/action-gh-release@v1
