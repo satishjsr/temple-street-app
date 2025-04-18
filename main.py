@@ -132,7 +132,10 @@ class TempleStreetApp:
                 outlet_df['ForecastQty'] = (outlet_df['Quantity'] ** 1.01 + 2).round().astype(int)
                 outlet_df['AdjustedQty'] = (outlet_df['ForecastQty'] * adjusted_factor).round().astype(int)
 
+                outlet_df['Item'] = outlet_df['Item'].str.strip().str.lower()
+                recipe_df['Item'] = recipe_df['Item'].str.strip().str.lower()
                 merged_df = pd.merge(outlet_df, recipe_df, on='Item', how='left')
+                merged_df['IngredientQty'] = merged_df['IngredientQty'].fillna(0)
                 merged_df['RequiredQty'] = merged_df['ForecastQty'] * merged_df['IngredientQty']
                 raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
                 raw_summary = raw_summary[raw_summary['RequiredQty'] > 0]
