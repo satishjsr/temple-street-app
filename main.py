@@ -109,7 +109,14 @@ class TempleStreetApp:
 
         try:
             df = pd.read_excel(self.file_path, skiprows=5)
-            df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
+
+            # Intelligent column detection and cleanup
+            cols = {col.strip().lower(): col for col in df.columns}
+            if 'item' in cols and 'qty.' in cols:
+                df = df.rename(columns={cols['item']: 'Item', cols['qty.']: 'Quantity'})
+            else:
+                raise ValueError("Item or Qty. columns not found in file.")
+
             df = df[["Item", "Quantity"]].copy()
             df["Outlet"] = self.selected_outlet
 
