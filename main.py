@@ -106,7 +106,7 @@ class TempleStreetApp:
             df = df[["Item", "Quantity"]].copy()
             df["Outlet"] = self.selected_outlet
 
-            forecast_factor = float(self.adjust_entry.get()) / 100.0
+            adjusted_factor = float(self.adjust_entry.get()) / 100.0
 
             outlets = df['Outlet'].unique()
             timestamp = datetime.now().strftime('%Y-%m-%d')
@@ -115,8 +115,8 @@ class TempleStreetApp:
             for outlet in outlets:
                 outlet_df = df[df['Outlet'] == outlet].copy()
                 outlet_df['Cuisine'] = outlet_df['Item'].apply(self.identify_cuisine)
-                outlet_df['ForecastQty'] = (outlet_df['Quantity'] * forecast_factor).round().astype(int)
-                outlet_df['AdjustedQty'] = outlet_df['ForecastQty']  # Staff can manually override this column
+                outlet_df['ForecastQty'] = outlet_df['Quantity'].round().astype(int)
+                outlet_df['AdjustedQty'] = (outlet_df['ForecastQty'] * adjusted_factor).round().astype(int)
 
                 outlet_df = outlet_df[outlet_df['ForecastQty'] > 0]
 
