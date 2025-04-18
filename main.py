@@ -120,7 +120,7 @@ class TempleStreetApp:
                 outlet_df['ForecastQty'] = (outlet_df['Quantity'] * forecast_factor).round().astype(int)
                 outlet_df['AdjustedQty'] = outlet_df['ForecastQty']
 
-                '] = outlet_df['ForecastQty']  # Staff can manually override this column
+outlet_df['AdjustedQty'] = outlet_df['ForecastQty']  # Staff can manually override this column
 
                 # Filter out zero or missing forecast
                 outlet_df = outlet_df[outlet_df['ForecastQty'] > 0]
