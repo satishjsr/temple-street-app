@@ -100,6 +100,14 @@ class TempleStreetApp:
             messagebox.showwarning("Missing", "Export folder does not exist yet.")
 
     def process_file(self):
+        # Load Recipe Report (BOM)
+        try:
+            recipe_df = pd.read_excel("Recipe_Report_2025_04_02_11_07_15.xlsx")
+            recipe_df = recipe_df.rename(columns={"Item": "Item", "Ingredient": "Ingredient", "Qty": "IngredientQty", "UOM": "UOM"})
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load Recipe Report:
+{e}")
+            return
         try:
             df = pd.read_excel(self.file_path, skiprows=5)
             df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
@@ -109,19 +117,23 @@ class TempleStreetApp:
             adjusted_factor = float(self.adjust_entry.get()) / 100.0
 
             outlets = df['Outlet'].unique()
-            timestamp = datetime.now().strftime('%Y-%m-%d')
+            future_date = (datetime.now() + pd.Timedelta(days=2)).strftime('%Y-%m-%d')
             os.makedirs("export", exist_ok=True)
 
             for outlet in outlets:
                 outlet_df = df[df['Outlet'] == outlet].copy()
                 outlet_df['Cuisine'] = outlet_df['Item'].apply(self.identify_cuisine)
-                outlet_df['ForecastQty'] = (outlet_df['Quantity'] ** 1.01 + 2).round().astype(int)  # Advanced demand smoothing model  # Example 10% forecast increase
+                outlet_df['ForecastQty'] = (outlet_df['Quantity'] ** 1.01 + 2).round().astype(int)
                 outlet_df['AdjustedQty'] = (outlet_df['ForecastQty'] * adjusted_factor).round().astype(int)
 
-                outlet_df = outlet_df[outlet_df['ForecastQty'] > 0]
+                # Expand item forecasts into raw ingredients
+                merged_df = pd.merge(outlet_df, recipe_df, on='Item', how='left')
+                merged_df['RequiredQty'] = merged_df['ForecastQty'] * merged_df['IngredientQty']
+                raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
+                raw_summary = raw_summary[raw_summary['RequiredQty'] > 0]
 
-                export_file = f"export/{outlet}_Forecast_{timestamp}.xlsx"
-                outlet_df.to_excel(export_file, index=False)
+                export_file = f"export/{outlet}_Forecast_{future_date}.xlsx"
+                raw_summary.to_excel(export_file, index=False)
 
             self.root.after(0, lambda: messagebox.showinfo("Success", "Forecast files saved in export folder."))
             self.root.after(0, lambda: self.status.config(text="✅ Forecast generated successfully!", fg="darkgreen"))
