@@ -1,4 +1,4 @@
-name: Build Temple Street App
+name: Build Temple Street App (.exe)
 
 on:
   release:
@@ -18,13 +18,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas openpyxl tk
+          pip install pandas openpyxl pyinstaller
 
       - name: Build .exe with PyInstaller
-        run: |
-          pyinstaller --noconfirm --onefile --windowed main.py
+        run: pyinstaller --noconfirm --onefile --windowed --icon=assets/temple-street.ico main.py
 
-      - name: Upload to Release
+      - name: Upload .exe to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: dist/main.exe
