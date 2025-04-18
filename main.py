@@ -147,6 +147,11 @@ class TempleStreetApp:
                     unmatched_items[['Item', 'Quantity']].drop_duplicates().to_excel(unmatched_export, index=False)
                     print(f"⚠️ Exported unmatched items to {unmatched_export}")
 
+                # Export merged debug view
+                debug_export = f"export/{outlet}_Merged_Debug_{future_date}.xlsx"
+                merged_df.to_excel(debug_export, index=False)
+                print(f"🛠️ Exported merged debug data to {debug_export}")
+
                 raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
                 raw_summary = raw_summary[raw_summary['RequiredQty'] > 0]
 
