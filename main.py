@@ -16,9 +16,8 @@ class TempleStreetApp:
         self.root = root
         self.role = role
         self.root.title("Temple Street Ordering System")
-        self.root.geometry("400x480")
+        self.root.geometry("400x500")
 
-        # Icon fail-safe
         icon_path = os.path.join("assets", "temple-street.ico")
         if os.path.exists(icon_path):
             try:
@@ -81,6 +80,53 @@ class TempleStreetApp:
         else:
             messagebox.showwarning("Missing", "Export folder does not exist yet.")
 
+    def process_file(self):
+        try:
+            df = pd.read_excel(self.file_path)
+            forecast_factor = float(self.adjust_entry.get()) / 100.0
+
+            # Split by outlet
+            outlets = df['Outlet'].unique()
+            timestamp = datetime.now().strftime('%Y-%m-%d')
+            os.makedirs("export", exist_ok=True)
+
+            for outlet in outlets:
+                outlet_df = df[df['Outlet'] == outlet].copy()
+
+                # Tag cuisine
+                outlet_df['Cuisine'] = outlet_df['Item'].apply(self.identify_cuisine)
+
+                # Apply forecast factor
+                if 'Quantity' in outlet_df.columns:
+                    outlet_df['ForecastQty'] = (outlet_df['Quantity'] * forecast_factor).round().astype(int)
+
+                # Filter out zero or missing forecast
+                outlet_df = outlet_df[outlet_df['ForecastQty'] > 0]
+
+                # Export file
+                export_file = f"export/{outlet}_Forecast_{timestamp}.xlsx"
+                outlet_df.to_excel(export_file, index=False)
+
+            self.root.after(0, lambda: messagebox.showinfo("Success", "Forecast files saved in export folder."))
+            self.root.after(0, lambda: self.status.config(text="✅ Forecast generated successfully!", fg="darkgreen"))
+
+        except Exception as e:
+            self.root.after(0, lambda: messagebox.showerror("Error", f"Failed to generate forecast:\n{e}"))
+            self.root.after(0, lambda: self.status.config(text="Error occurred", fg="red"))
+        finally:
+            self.root.after(0, self.progress.stop)
+            self.root.after(0, self.progress.pack_forget)
+
+    def identify_cuisine(self, item):
+        item = str(item).lower()
+        if any(word in item for word in ["paneer", "dal", "roti", "sabzi"]):
+            return "North Indian"
+        elif any(word in item for word in ["idli", "dosa", "sambar"]):
+            return "South Indian"
+        elif any(word in item for word in ["noodles", "manchurian"]):
+            return "Chinese"
+        else:
+            return "Other"
 
 def prompt_login():
     login_window = tk.Tk()
@@ -99,7 +145,6 @@ def prompt_login():
     root = tk.Tk()
     app = TempleStreetApp(root, role=username)
     root.mainloop()
-
 
 if __name__ == "__main__":
     prompt_login()
