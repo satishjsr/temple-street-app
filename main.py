@@ -55,7 +55,7 @@ class TempleStreetApp:
         self.file_path = ""
 
     def import_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
+        file_path = filedialog.askopenfilename(filetypes=[["Excel files", "*.xlsx"]])
         if file_path:
             self.file_path = file_path
             self.status.config(text=f"File loaded: {os.path.basename(file_path)}", fg="green")
@@ -103,13 +103,11 @@ class TempleStreetApp:
         try:
             df = pd.read_excel(self.file_path, skiprows=5)
             df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
-            # Retain Quantity and Outlet before filtering
             df = df[["Item", "Quantity"]].copy()
-            df["Outlet"] = self.selected_outlet  # Filter only necessary columns
-            df["Outlet"] = self.selected_outlet  # Add selected outlet manually
+            df["Outlet"] = self.selected_outlet
+
             forecast_factor = float(self.adjust_entry.get()) / 100.0
 
-            # Split by outlet
             outlets = df['Outlet'].unique()
             timestamp = datetime.now().strftime('%Y-%m-%d')
             os.makedirs("export", exist_ok=True)
@@ -118,14 +116,10 @@ class TempleStreetApp:
                 outlet_df = df[df['Outlet'] == outlet].copy()
                 outlet_df['Cuisine'] = outlet_df['Item'].apply(self.identify_cuisine)
                 outlet_df['ForecastQty'] = (outlet_df['Quantity'] * forecast_factor).round().astype(int)
-                outlet_df['AdjustedQty'] = outlet_df['ForecastQty']
+                outlet_df['AdjustedQty'] = outlet_df['ForecastQty']  # Staff can manually override this column
 
-outlet_df['AdjustedQty'] = outlet_df['ForecastQty']  # Staff can manually override this column
-
-                # Filter out zero or missing forecast
                 outlet_df = outlet_df[outlet_df['ForecastQty'] > 0]
 
-                # Export file
                 export_file = f"export/{outlet}_Forecast_{timestamp}.xlsx"
                 outlet_df.to_excel(export_file, index=False)
 
