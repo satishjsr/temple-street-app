@@ -1,3 +1,4 @@
+
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
 import pandas as pd
@@ -18,7 +19,6 @@ class TempleStreetApp:
         self.root.title("Temple Street Ordering System")
         self.root.geometry("400x500")
 
-        # Icon fail-safe
         icon_path = os.path.join("assets", "temple-street.ico")
         if os.path.exists(icon_path):
             try:
@@ -100,69 +100,67 @@ class TempleStreetApp:
 
     def process_file(self):
         try:
-            recipe_df = pd.read_excel("Recipe_Report_2025_04_18_11_01_56.xlsx")
-            long_format = []
-            for i in range(1, 20):
-                ing_col = f"RawMaterial{i}"
-                qty_col = f"Qty{i}"
-                uom_col = f"UOM{i}"
-                if ing_col in recipe_df.columns:
-                    block = recipe_df[["ItemName", ing_col, qty_col, uom_col]].copy()
+            recipe_df_raw = pd.read_excel("Recipe_Report_2025_04_18_11_01_56.xlsx", skiprows=4)
+            ingredient_blocks = []
+            for i in range(0, 84):
+                ing_col = f"RawMaterial" if i == 0 else f"RawMaterial.{i}"
+                qty_col = f"Qty" if i == 0 else f"Qty.{i}"
+                uom_col = f"Unit" if i == 0 else f"Unit.{i}"
+                if ing_col in recipe_df_raw.columns:
+                    block = recipe_df_raw[["ItemName", ing_col, qty_col, uom_col]].copy()
                     block.columns = ["Final Item", "Ingredient", "Qty", "UOM"]
-                    long_format.append(block)
-            recipe_df = pd.concat(long_format)
+                    ingredient_blocks.append(block)
+
+            recipe_df = pd.concat(ingredient_blocks)
             recipe_df = recipe_df.dropna(subset=["Ingredient", "Qty"])
             recipe_df["Item"] = recipe_df["Final Item"].str.strip().str.lower()
-            recipe_df = recipe_df.rename(columns={"Ingredient": "Ingredient", "Qty": "IngredientQty", "UOM": "UOM"})
+            recipe_df["Ingredient"] = recipe_df["Ingredient"].str.strip().str.lower()
+            recipe_df = recipe_df.rename(columns={"Qty": "IngredientQty"})
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load Recipe Report:\n{e}")
             return
 
         try:
-            df = pd.read_excel(self.file_path, skiprows=6)
-            if not ("Item" in df.columns and "Qty." in df.columns):
-                raise ValueError("Excel file must contain 'Item' and 'Qty.' columns after row 5.")
-            df = df.rename(columns={"Item": "Item", "Qty.": "Quantity"})
-            df = df[["Item", "Quantity"]].copy()
+            sales_df = pd.read_excel(self.file_path, skiprows=11)
+            sales_df.columns = ["Category", "Item", "Qty", "Total"]
+            sales_df = sales_df[sales_df["Item"].notna()]
+            df = sales_df[["Item", "Qty"]].rename(columns={"Qty": "Quantity"})
             df["Outlet"] = self.selected_outlet
 
             adjusted_factor = float(self.adjust_entry.get()) / 100.0
-            outlets = df['Outlet'].unique()
             future_date = (datetime.now() + pd.Timedelta(days=2)).strftime('%Y-%m-%d')
             os.makedirs("export", exist_ok=True)
 
-            for outlet in outlets:
-                outlet_df = df[df['Outlet'] == outlet].copy()
-                outlet_df['Cuisine'] = outlet_df['Item'].apply(self.identify_cuisine)
-                outlet_df['ForecastQty'] = (outlet_df['Quantity'] ** 1.01 + 2).round().astype(int)
-                outlet_df['AdjustedQty'] = (outlet_df['ForecastQty'] * adjusted_factor).round().astype(int)
+            df["Item"] = df["Item"].str.strip().str.lower()
+            recipe_df["Item"] = recipe_df["Item"].str.strip().str.lower()
+            merged_df = pd.merge(df, recipe_df, on="Item", how="left")
 
-                outlet_df['Item'] = outlet_df['Item'].str.strip().str.lower()
-                recipe_df['Item'] = recipe_df['Item'].str.strip().str.lower()
-                merged_df = pd.merge(outlet_df, recipe_df, on='Item', how='left')
+            if merged_df["IngredientQty"].isna().all():
+                raise ValueError("None of the 'Item' entries from sales matched the recipe sheet. Check spelling/casing.")
 
-                if merged_df['IngredientQty'].isna().all():
-                    raise ValueError("None of the 'Item' entries from sales matched the recipe sheet. Check spelling/casing.")
+            merged_df["IngredientQty"] = merged_df["IngredientQty"].fillna(0)
+            merged_df["ForecastQty"] = (merged_df["Quantity"] ** 1.01 + 2).round().astype(int)
+            merged_df["AdjustedQty"] = (merged_df["ForecastQty"] * adjusted_factor).round().astype(int)
+            merged_df["RequiredQty"] = merged_df["ForecastQty"] * merged_df["IngredientQty"]
+            merged_df["Cuisine"] = merged_df["Item"].apply(self.identify_cuisine)
 
-                merged_df['IngredientQty'] = merged_df['IngredientQty'].fillna(0)
-                merged_df['RequiredQty'] = merged_df['ForecastQty'] * merged_df['IngredientQty']
-                matched_items = merged_df[~merged_df['Ingredient'].isna()]['Item'].unique()
-                unmatched_items = outlet_df[~outlet_df['Item'].isin(matched_items)]
-                if not unmatched_items.empty:
-                    unmatched_export = f"export/{outlet}_Unmatched_Items_{future_date}.xlsx"
-                    unmatched_items[['Item', 'Quantity']].drop_duplicates().to_excel(unmatched_export, index=False)
+            matched_items = merged_df[~merged_df['Ingredient'].isna()]['Item'].unique()
+            unmatched_items = df[~df['Item'].isin(matched_items)]
+            if not unmatched_items.empty:
+                unmatched_export = f"export/{self.selected_outlet}_Unmatched_Items_{future_date}.xlsx"
+                unmatched_items[['Item', 'Quantity']].drop_duplicates().to_excel(unmatched_export, index=False)
 
-                debug_export = f"export/{outlet}_Merged_Debug_{future_date}.xlsx"
-                merged_df.to_excel(debug_export, index=False)
+            debug_export = f"export/{self.selected_outlet}_Merged_Debug_{future_date}.xlsx"
+            merged_df.to_excel(debug_export, index=False)
 
-                raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
-                raw_summary = raw_summary[raw_summary['RequiredQty'] > 0]
+            raw_summary = merged_df.groupby(['Ingredient', 'UOM', 'Cuisine', 'Outlet'])['RequiredQty'].sum().reset_index()
+            raw_summary = raw_summary[raw_summary['RequiredQty'] > 0]
 
-                export_file = f"export/{outlet}_Forecast_{future_date}.xlsx"
-                raw_summary.to_excel(export_file, index=False)
+            export_file = f"export/{self.selected_outlet}_Forecast_{future_date}.xlsx"
+            raw_summary.to_excel(export_file, index=False)
 
-                if self.role == "admin":
-                    webbrowser.open(os.path.abspath("export"))
+            if self.role == "admin":
+                webbrowser.open(os.path.abspath("export"))
 
             self.root.after(0, lambda: messagebox.showinfo("Success", "Forecast files saved in export folder."))
             self.root.after(0, lambda: self.status.config(text="✅ Forecast generated successfully!", fg="darkgreen"))
