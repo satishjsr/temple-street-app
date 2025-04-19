@@ -1,10 +1,10 @@
-# ✅ Phase 2 Update to Temple Street App – With Stock-Aware Purchase Planning (Fixed)
+# ✅ Phase 2.1 Update – Accurate Daily Forecasting from Historical Day-wise Sales Data
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
 import pandas as pd
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import threading
 import webbrowser
 
@@ -18,7 +18,7 @@ class TempleStreetApp:
         self.root = root
         self.role = role
         self.root.title("Temple Street Ordering System")
-        self.root.geometry("400x550")
+        self.root.geometry("400x580")
 
         icon_path = os.path.join("assets", "temple-street.ico")
         if os.path.exists(icon_path):
@@ -33,7 +33,7 @@ class TempleStreetApp:
         self.status = tk.Label(root, text="Status: Waiting for file", fg="blue")
         self.status.pack(pady=10)
 
-        self.import_sales_btn = tk.Button(root, text="📂 Import Item Sales Excel File", command=self.import_sales_file)
+        self.import_sales_btn = tk.Button(root, text="📂 Import Day-wise Item Sales File", command=self.import_sales_file)
         self.import_sales_btn.pack(pady=5)
 
         self.import_stock_btn = tk.Button(root, text="📦 Import Current Stock File", command=self.import_stock_file)
@@ -93,12 +93,21 @@ class TempleStreetApp:
 
     def process_file(self):
         try:
-            df_sales = pd.read_excel(self.sales_file_path, skiprows=11)
-            df_sales.columns = ["Category", "Item", "Qty", "Total"]
-            df_sales = df_sales[["Item", "Qty"]].dropna()
-            df_sales.columns = ["Item", "Quantity"]
-            df_sales["Item"] = df_sales["Item"].str.strip().str.lower()
+            # Step 1: Read day-wise sales file (skipping unnecessary rows)
+            df_sales = pd.read_excel(self.sales_file_path, skiprows=4)
+            df_sales.columns = df_sales.columns.str.strip().str.lower()
+            df_sales = df_sales.rename(columns={"item": "item", "date": "date", "qty": "quantity"})
+            df_sales["item"] = df_sales["item"].str.strip().str.lower()
+            df_sales["date"] = pd.to_datetime(df_sales["date"], dayfirst=True)
 
+            # Step 2: Predict for day after tomorrow
+            forecast_date = datetime.now() + timedelta(days=2)
+            day_df = df_sales[df_sales["date"] == forecast_date.date()]  # select only that day
+
+            item_qty = day_df.groupby("item")["quantity"].sum().reset_index()
+            item_qty.columns = ["item", "forecastqty"]
+
+            # Step 3: Load recipe file and flatten
             recipe_df_raw = pd.read_excel("Recipe_Report_2025_04_18_11_01_56.xlsx", skiprows=4)
             recipe_df = pd.concat([
                 recipe_df_raw[[f"ItemName", f"RawMaterial{'.' + str(i) if i else ''}", f"Qty{'.' + str(i) if i else ''}", f"Unit{'.' + str(i) if i else ''}"]].rename(columns={
@@ -109,28 +118,27 @@ class TempleStreetApp:
             ])
 
             recipe_df = recipe_df.dropna(subset=["Ingredient", "Qty"])
-            recipe_df["Item"] = recipe_df["ItemName"].str.strip().str.lower()
-            recipe_df["Ingredient"] = recipe_df["Ingredient"].str.strip().str.lower()
-            recipe_df = recipe_df.rename(columns={"Qty": "IngredientQty"})
+            recipe_df["item"] = recipe_df["ItemName"].str.strip().str.lower()
+            recipe_df["ingredient"] = recipe_df["Ingredient"].str.strip().str.lower()
+            recipe_df = recipe_df.rename(columns={"Qty": "ingredientqty"})
 
-            df_stock = pd.read_excel(self.stock_file_path, skiprows=4)  # FIXED: Skip extra headers
+            df_stock = pd.read_excel(self.stock_file_path, skiprows=4)
             df_stock.columns = df_stock.columns.str.strip().str.lower()
             stock_map = dict(zip(df_stock['item'].str.lower(), df_stock['current stock']))
 
-            merged = pd.merge(df_sales, recipe_df, on="Item", how="left")
-            merged["ForecastQty"] = (merged["Quantity"] ** 1.01 + 2).round().astype(int)
+            merged = pd.merge(item_qty, recipe_df, on="item", how="left")
             factor = float(self.adjust_entry.get()) / 100.0
-            merged["AdjustedQty"] = (merged["ForecastQty"] * factor).round().astype(int)
-            merged["RequiredQty"] = (merged["ForecastQty"] * merged["IngredientQty"]).round(2)
-            merged["Stock"] = merged["Ingredient"].map(stock_map).fillna(0)
-            merged["ToOrder"] = (merged["RequiredQty"] - merged["Stock"]).clip(lower=0)
+            merged["adjustedqty"] = (merged["forecastqty"] * factor).round().astype(int)
+            merged["requiredqty"] = (merged["forecastqty"] * merged["ingredientqty"]).round(2)
+            merged["stock"] = merged["ingredient"].map(stock_map).fillna(0)
+            merged["toorder"] = (merged["requiredqty"] - merged["stock"]).clip(lower=0)
 
             os.makedirs("export", exist_ok=True)
             today = datetime.now().strftime('%Y-%m-%d')
             merged.to_excel(f"export/Forecast_Purchase_Plan_{today}.xlsx", index=False)
 
-            self.root.after(0, lambda: messagebox.showinfo("Success", "Forecast + Purchase Order generated."))
-            self.status.config(text="✅ Purchase planning completed!", fg="darkgreen")
+            self.root.after(0, lambda: messagebox.showinfo("Success", "Forecast for {forecast_date.strftime('%d-%b-%Y')} generated."))
+            self.status.config(text="✅ Daily forecast completed!", fg="darkgreen")
 
         except Exception as e:
             self.root.after(0, lambda: messagebox.showerror("Error", str(e)))
