@@ -1,4 +1,4 @@
-# ✅ Phase 2.1 Update – Accurate Daily Forecasting from Historical Day-wise Sales Data
+# ✅ Phase 2.1.1 Fix – Proper Header Detection for Petpooja Day-wise Report
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -93,21 +93,29 @@ class TempleStreetApp:
 
     def process_file(self):
         try:
-            # Step 1: Read day-wise sales file (skipping unnecessary rows)
-            df_sales = pd.read_excel(self.sales_file_path, skiprows=4)
+            # 📊 Read Petpooja format day-wise sales report
+            raw_df = pd.read_excel(self.sales_file_path)
+            data_start_index = raw_df[raw_df.iloc[:, 0] == "Item"].index.min()
+            df_sales = pd.read_excel(self.sales_file_path, skiprows=data_start_index + 1)
             df_sales.columns = df_sales.columns.str.strip().str.lower()
-            df_sales = df_sales.rename(columns={"item": "item", "date": "date", "qty": "quantity"})
+
+            # 🛠 Robust column mapping
+            df_sales = df_sales.rename(columns={
+                next(col for col in df_sales.columns if "item" in col): "item",
+                next(col for col in df_sales.columns if "date" in col): "date",
+                next(col for col in df_sales.columns if "qty" in col): "quantity"
+            })
+
             df_sales["item"] = df_sales["item"].str.strip().str.lower()
             df_sales["date"] = pd.to_datetime(df_sales["date"], dayfirst=True)
 
-            # Step 2: Predict for day after tomorrow
+            # 📅 Forecast only for (today + 2 days)
             forecast_date = datetime.now() + timedelta(days=2)
-            day_df = df_sales[df_sales["date"] == forecast_date.date()]  # select only that day
-
+            day_df = df_sales[df_sales["date"] == forecast_date.date()]
             item_qty = day_df.groupby("item")["quantity"].sum().reset_index()
             item_qty.columns = ["item", "forecastqty"]
 
-            # Step 3: Load recipe file and flatten
+            # 📋 Recipe file
             recipe_df_raw = pd.read_excel("Recipe_Report_2025_04_18_11_01_56.xlsx", skiprows=4)
             recipe_df = pd.concat([
                 recipe_df_raw[[f"ItemName", f"RawMaterial{'.' + str(i) if i else ''}", f"Qty{'.' + str(i) if i else ''}", f"Unit{'.' + str(i) if i else ''}"]].rename(columns={
@@ -137,7 +145,7 @@ class TempleStreetApp:
             today = datetime.now().strftime('%Y-%m-%d')
             merged.to_excel(f"export/Forecast_Purchase_Plan_{today}.xlsx", index=False)
 
-            self.root.after(0, lambda: messagebox.showinfo("Success", "Forecast for {forecast_date.strftime('%d-%b-%Y')} generated."))
+            self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast for {forecast_date.strftime('%d-%b-%Y')} generated."))
             self.status.config(text="✅ Daily forecast completed!", fg="darkgreen")
 
         except Exception as e:
