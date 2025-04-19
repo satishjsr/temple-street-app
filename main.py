@@ -1,4 +1,4 @@
-# ✅ Phase 2.1.4 – Final Fix: Accurate Daily Forecasting with Clean File Parsing
+# ✅ Phase 2.2 – Weekday-Based Forecasting Logic for Temple Street
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -109,8 +109,10 @@ class TempleStreetApp:
             df_sales = df_sales.dropna(subset=["date"])
 
             forecast_date = datetime.now() + timedelta(days=2)
-            day_df = df_sales[df_sales["date"].dt.date == forecast_date.date()]
-            item_qty = day_df.groupby("item")["quantity"].sum().reset_index()
+            forecast_weekday = forecast_date.weekday()
+
+            weekday_df = df_sales[df_sales["date"].dt.weekday == forecast_weekday]
+            item_qty = weekday_df.groupby("item")["quantity"].mean().round().reset_index()
             item_qty.columns = ["item", "forecastqty"]
 
             recipe_df = pd.read_excel("Recipe_Report_2025_04_18_11_01_56.xlsx", skiprows=4)
@@ -139,8 +141,8 @@ class TempleStreetApp:
             today = datetime.now().strftime('%Y-%m-%d')
             merged.to_excel(f"export/Forecast_Purchase_Plan_{today}.xlsx", index=False)
 
-            self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast for {forecast_date.strftime('%d-%b-%Y')} generated."))
-            self.status.config(text="✅ Daily forecast completed!", fg="darkgreen")
+            self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast for {forecast_date.strftime('%d-%b-%Y')} (Weekday Avg) generated."))
+            self.status.config(text="✅ Weekday-based forecast completed!", fg="darkgreen")
 
         except Exception as e:
             self.root.after(0, lambda: messagebox.showerror("Error", str(e)))
