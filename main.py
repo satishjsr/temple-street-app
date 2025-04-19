@@ -1,4 +1,4 @@
-# ✅ Phase 2 Update to Temple Street App – With Stock-Aware Purchase Planning
+# ✅ Phase 2 Update to Temple Street App – With Stock-Aware Purchase Planning (Fixed)
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -113,9 +113,9 @@ class TempleStreetApp:
             recipe_df["Ingredient"] = recipe_df["Ingredient"].str.strip().str.lower()
             recipe_df = recipe_df.rename(columns={"Qty": "IngredientQty"})
 
-            df_stock = pd.read_excel(self.stock_file_path)
+            df_stock = pd.read_excel(self.stock_file_path, skiprows=4)  # FIXED: Skip extra headers
             df_stock.columns = df_stock.columns.str.strip().str.lower()
-            stock_map = dict(zip(df_stock['raw material name'].str.lower(), df_stock['closing stock']))
+            stock_map = dict(zip(df_stock['item'].str.lower(), df_stock['current stock']))
 
             merged = pd.merge(df_sales, recipe_df, on="Item", how="left")
             merged["ForecastQty"] = (merged["Quantity"] ** 1.01 + 2).round().astype(int)
