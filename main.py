@@ -1,4 +1,4 @@
-# ✅ Phase 2.1.2 Fix – Robust Date Format Handling
+# ✅ Phase 2.1.4 – Final Fix: Accurate Daily Forecasting with Clean File Parsing
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -109,23 +109,20 @@ class TempleStreetApp:
             df_sales = df_sales.dropna(subset=["date"])
 
             forecast_date = datetime.now() + timedelta(days=2)
-            day_df = df_sales[df_sales["date"] == forecast_date.date()]
+            day_df = df_sales[df_sales["date"].dt.date == forecast_date.date()]
             item_qty = day_df.groupby("item")["quantity"].sum().reset_index()
             item_qty.columns = ["item", "forecastqty"]
 
-            recipe_df_raw = pd.read_excel("Recipe_Report_2025_04_18_11_01_56.xlsx", skiprows=4)
-            recipe_df = pd.concat([
-                recipe_df_raw[[f"ItemName", f"RawMaterial{'.' + str(i) if i else ''}", f"Qty{'.' + str(i) if i else ''}", f"Unit{'.' + str(i) if i else ''}"]].rename(columns={
-                    f"RawMaterial{'.' + str(i) if i else ''}": "Ingredient",
-                    f"Qty{'.' + str(i) if i else ''}": "Qty",
-                    f"Unit{'.' + str(i) if i else ''}": "UOM"
-                }) for i in range(84) if f"RawMaterial{'.' + str(i) if i else ''}" in recipe_df_raw.columns
-            ])
+            recipe_df = pd.read_excel("Recipe_Report_2025_04_18_11_01_56.xlsx", skiprows=4)
+            recipe_df.columns = recipe_df.columns.str.strip().str.lower()
+            recipe_df = recipe_df.rename(columns={
+                "itemname": "item",
+                "rawmaterial": "ingredient",
+                "qty": "ingredientqty"
+            })
 
-            recipe_df = recipe_df.dropna(subset=["Ingredient", "Qty"])
-            recipe_df["item"] = recipe_df["ItemName"].str.strip().str.lower()
-            recipe_df["ingredient"] = recipe_df["Ingredient"].str.strip().str.lower()
-            recipe_df = recipe_df.rename(columns={"Qty": "ingredientqty"})
+            recipe_df["item"] = recipe_df["item"].str.strip().str.lower()
+            recipe_df["ingredient"] = recipe_df["ingredient"].str.strip().str.lower()
 
             df_stock = pd.read_excel(self.stock_file_path, skiprows=4)
             df_stock.columns = df_stock.columns.str.strip().str.lower()
