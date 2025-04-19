@@ -18,7 +18,7 @@ class TempleStreetApp:
         self.root = root
         self.role = role
         self.root.title("Temple Street Ordering System")
-        self.root.geometry("400x580")
+        self.root.geometry("400x620")
 
         icon_path = os.path.join("assets", "temple-street.ico")
         if os.path.exists(icon_path):
@@ -51,6 +51,9 @@ class TempleStreetApp:
         self.open_folder_btn = tk.Button(root, text="📁 Open Export Folder", command=self.open_export_folder)
         self.open_folder_btn.pack(pady=5)
 
+        self.view_order_btn = tk.Button(root, text="🧾 View Final Purchase Order", command=self.view_purchase_order, state=tk.DISABLED)
+        self.view_order_btn.pack(pady=5)
+
         if role == "admin":
             self.whatsapp_btn = tk.Button(root, text="📤 Send Files via WhatsApp", command=self.send_via_whatsapp)
             self.whatsapp_btn.pack(pady=5)
@@ -58,6 +61,7 @@ class TempleStreetApp:
         self.progress = ttk.Progressbar(root, mode='indeterminate')
         self.sales_file_path = ""
         self.stock_file_path = ""
+        self.purchase_order_file = ""
 
     def import_sales_file(self):
         path = filedialog.askopenfilename(filetypes=[["Excel files", "*.xlsx"]])
@@ -86,6 +90,12 @@ class TempleStreetApp:
         os.makedirs(export_dir, exist_ok=True)
         webbrowser.open(export_dir)
 
+    def view_purchase_order(self):
+        if self.purchase_order_file and os.path.exists(self.purchase_order_file):
+            os.startfile(self.purchase_order_file)
+        else:
+            messagebox.showerror("Not Found", "Purchase Order file not found.")
+
     def send_via_whatsapp(self):
         export_dir = os.path.abspath("export")
         messagebox.showinfo("Manual Step", "Share files from:\n" + export_dir)
@@ -110,6 +120,7 @@ class TempleStreetApp:
 
             forecast_date = datetime.now() + timedelta(days=2)
             forecast_weekday = forecast_date.weekday()
+            target_str = forecast_date.strftime('%Y-%m-%d')
 
             weekday_df = df_sales[df_sales["date"].dt.weekday == forecast_weekday]
             item_qty = weekday_df.groupby("item")["quantity"].mean().round().reset_index()
@@ -138,11 +149,18 @@ class TempleStreetApp:
             merged["toorder"] = (merged["requiredqty"] - merged["stock"]).clip(lower=0)
 
             os.makedirs("export", exist_ok=True)
-            today = datetime.now().strftime('%Y-%m-%d')
-            merged.to_excel(f"export/Forecast_Purchase_Plan_{today}.xlsx", index=False)
+            forecast_file = f"export/Forecast_Purchase_Plan_{target_str}.xlsx"
+            merged.to_excel(forecast_file, index=False)
 
-            self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast for {forecast_date.strftime('%d-%b-%Y')} (Weekday Avg) generated."))
-            self.status.config(text="✅ Weekday-based forecast completed!", fg="darkgreen")
+            po_df = merged[["ingredient", "toorder"]]
+            po_df = po_df[po_df["toorder"] > 0]
+            po_file = f"export/Purchase_Order_{target_str}.xlsx"
+            self.purchase_order_file = os.path.abspath(po_file)
+            po_df.to_excel(po_file, index=False)
+
+            self.view_order_btn.config(state=tk.NORMAL)
+            self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast and Purchase Order ready for {forecast_date.strftime('%d-%b-%Y')}"))
+            self.status.config(text="✅ Forecast and PO generated successfully!", fg="darkgreen")
 
         except Exception as e:
             self.root.after(0, lambda: messagebox.showerror("Error", str(e)))
