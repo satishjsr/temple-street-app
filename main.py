@@ -24,12 +24,15 @@ def show_splash():
     splash.overrideredirect(True)
     splash.geometry("400x300+500+250")
     logo_path = os.path.join("assets", "logo.png")
-    if os.path.exists(logo_path):
-        img = Image.open(logo_path).resize((120, 120))
-        tk_img = ImageTk.PhotoImage(img)
-        logo = tk.Label(splash, image=tk_img)
-        logo.image = tk_img
-        logo.pack(pady=20)
+    try:
+        if os.path.exists(logo_path):
+            img = Image.open(logo_path).resize((120, 120))
+            tk_img = ImageTk.PhotoImage(img)
+            logo = tk.Label(splash, image=tk_img)
+            logo.image = tk_img
+            logo.pack(pady=20)
+    except Exception as e:
+        print(f"⚠️ Logo load failed: {e}")
 
     tk.Label(splash, text="Temple Street", font=("Helvetica", 18, "bold"), fg="#800000").pack()
     tk.Label(splash, text="Excellence is our recipe", font=("Helvetica", 12)).pack(pady=5)
@@ -37,5 +40,16 @@ def show_splash():
 
     splash.after(2000, splash.destroy)
     splash.mainloop()
+
+# ✅ Entry point for launching the app
+def run_app():
+    show_splash()
+    root = tk.Tk()
+    app = TempleStreetApp(root)
+    root.mainloop()
+
+# Ensure the app launches
+if __name__ == "__main__":
+    run_app()
 
 # (rest of main.py continues unchanged from v2.6.0 ZIP)
