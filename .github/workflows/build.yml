@@ -22,9 +22,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas openpyxl pyinstaller pillow
 
-      - name: Build .exe with PyInstaller (console mode for debugging)
+      - name: Build .exe with PyInstaller (stable release)
         run: |
-          python -m PyInstaller --noconfirm --onefile --console --icon=assets/temple-street.ico main.py
+          python -m PyInstaller --noconfirm --onefile --windowed --icon=assets/temple-street.ico main.py
 
       - name: Upload .exe to GitHub Release
         uses: softprops/action-gh-release@v1
