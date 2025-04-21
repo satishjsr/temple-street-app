@@ -184,7 +184,7 @@ class TempleStreetApp:
             merged = pd.merge(item_qty, recipe_df, on="item", how="left")
             factor = float(self.adjust_entry.get()) / 100.0
             merged["adjustedqty"] = (merged["forecastqty"] * factor).round().astype(int)
-            merged["requiredqty"] = (merged["forecastqty"] * merged["ingredientqty"]).round(2)
+            merged["requiredqty"] = (merged["adjustedqty"] * merged["ingredientqty"]).round(2)
             merged["stock"] = merged["ingredient"].map(stock_map).fillna(0)
             merged["toorder"] = (merged["requiredqty"] - merged["stock"]).clip(lower=0)
 
