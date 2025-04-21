@@ -1,4 +1,4 @@
-# ✅ Phase 2.3 – Forecasting + Purchase Order with Units
+# ✅ Phase 2.5 – Polished UI + Branding Enhancements
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -13,12 +13,14 @@ USERS = {
     "staff": "staff123"
 }
 
+APP_VERSION = "v2.5.0"
+
 class TempleStreetApp:
     def __init__(self, root, role):
         self.root = root
         self.role = role
-        self.root.title("Temple Street Ordering System")
-        self.root.geometry("400x620")
+        self.root.title(f"Temple Street Ordering System {APP_VERSION} - {role.title()}")
+        self.root.geometry("400x640")
 
         icon_path = os.path.join("assets", "temple-street.ico")
         if os.path.exists(icon_path):
@@ -57,6 +59,9 @@ class TempleStreetApp:
         if role == "admin":
             self.whatsapp_btn = tk.Button(root, text="📤 Send Files via WhatsApp", command=self.send_via_whatsapp)
             self.whatsapp_btn.pack(pady=5)
+
+        self.help_btn = tk.Button(root, text="❓ Help", command=self.show_help)
+        self.help_btn.pack(pady=5)
 
         self.progress = ttk.Progressbar(root, mode='indeterminate')
         self.sales_file_path = ""
@@ -100,6 +105,18 @@ class TempleStreetApp:
         export_dir = os.path.abspath("export")
         messagebox.showinfo("Manual Step", "Share files from:\n" + export_dir)
         webbrowser.open(export_dir)
+
+    def show_help(self):
+        help_text = (
+            "Temple Street Forecasting Help:\n\n"
+            "1. Import item-wise sales Excel file from Petpooja.\n"
+            "2. Import the current stock file.\n"
+            "3. Optional: Adjust the forecast using a % buffer.\n"
+            "4. Click Generate Forecast to create Purchase Order.\n"
+            "5. Use the 'Open Export Folder' to find your files.\n\n"
+            "Need help? Contact: support@templestreet.in"
+        )
+        messagebox.showinfo("Help", help_text)
 
     def process_file(self):
         try:
@@ -164,7 +181,7 @@ class TempleStreetApp:
             self.status.config(text="✅ Forecast and PO generated successfully!", fg="darkgreen")
 
         except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Error", str(e)))
+            self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred:\n{str(e)}"))
 
         finally:
             self.root.after(0, self.progress.stop)
