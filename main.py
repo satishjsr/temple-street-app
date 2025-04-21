@@ -1,4 +1,4 @@
-# ✅ Phase 2.6.1 – Splash Screen + Excel Branding Enhancements (Last Known Stable)
+# ✅ Phase 2.6 – Splash Screen + Excel Branding Enhancements (Restored from v2.6.1 working ZIP)
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -16,7 +16,7 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.6.1"
+APP_VERSION = "v2.6.0"
 
 # 🖼 Splash screen before login
 def show_splash():
@@ -38,4 +38,4 @@ def show_splash():
     splash.after(2000, splash.destroy)
     splash.mainloop()
 
-# (rest of the code continues from Phase 2.6.1 including forecasting logic and Excel branding)
+# (rest of main.py continues unchanged from v2.6.0 ZIP)
