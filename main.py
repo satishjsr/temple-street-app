@@ -1,4 +1,4 @@
-# ✅ Phase 2.2 – Weekday-Based Forecasting Logic for Temple Street
+# ✅ Phase 2.3 – Forecasting + Purchase Order with Units
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -131,7 +131,8 @@ class TempleStreetApp:
             recipe_df = recipe_df.rename(columns={
                 "itemname": "item",
                 "rawmaterial": "ingredient",
-                "qty": "ingredientqty"
+                "qty": "ingredientqty",
+                "uom": "unit"
             })
 
             recipe_df["item"] = recipe_df["item"].str.strip().str.lower()
@@ -152,7 +153,7 @@ class TempleStreetApp:
             forecast_file = f"export/Forecast_Purchase_Plan_{target_str}.xlsx"
             merged.to_excel(forecast_file, index=False)
 
-            po_df = merged[["ingredient", "toorder"]]
+            po_df = merged[["ingredient", "toorder", "unit"]]
             po_df = po_df[po_df["toorder"] > 0]
             po_file = f"export/Purchase_Order_{target_str}.xlsx"
             self.purchase_order_file = os.path.abspath(po_file)
