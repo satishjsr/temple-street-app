@@ -1,4 +1,4 @@
-# ✅ Phase 2.5 – Polished UI + Branding Enhancements
+# ✅ Phase 2.6 – Splash Screen + Excel Branding Enhancements
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -7,13 +7,36 @@ import os
 from datetime import datetime, timedelta
 import threading
 import webbrowser
+from openpyxl import load_workbook
+from openpyxl.drawing.image import Image as XLImage
+from PIL import ImageTk, Image
 
 USERS = {
     "admin": "admin123",
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.5.0"
+APP_VERSION = "v2.6.0"
+
+# 🖼 Splash screen before login
+def show_splash():
+    splash = tk.Tk()
+    splash.overrideredirect(True)
+    splash.geometry("400x300+500+250")
+    logo_path = os.path.join("assets", "logo.png")
+    if os.path.exists(logo_path):
+        img = Image.open(logo_path).resize((120, 120))
+        tk_img = ImageTk.PhotoImage(img)
+        logo = tk.Label(splash, image=tk_img)
+        logo.image = tk_img
+        logo.pack(pady=20)
+
+    tk.Label(splash, text="Temple Street", font=("Helvetica", 18, "bold"), fg="#800000").pack()
+    tk.Label(splash, text="Excellence is our recipe", font=("Helvetica", 12)).pack(pady=5)
+    tk.Label(splash, text=f"Version: {APP_VERSION}", font=("Helvetica", 10)).pack()
+
+    splash.after(2000, splash.destroy)
+    splash.mainloop()
 
 class TempleStreetApp:
     def __init__(self, root, role):
@@ -151,7 +174,6 @@ class TempleStreetApp:
                 "qty": "ingredientqty",
                 "uom": "unit"
             })
-
             recipe_df["item"] = recipe_df["item"].str.strip().str.lower()
             recipe_df["ingredient"] = recipe_df["ingredient"].str.strip().str.lower()
 
@@ -169,6 +191,21 @@ class TempleStreetApp:
             os.makedirs("export", exist_ok=True)
             forecast_file = f"export/Forecast_Purchase_Plan_{target_str}.xlsx"
             merged.to_excel(forecast_file, index=False)
+
+            # ➕ Add logo and footer to Excel forecast file
+            try:
+                wb = load_workbook(forecast_file)
+                ws = wb.active
+                logo_path = os.path.join("assets", "logo.png")
+                if os.path.exists(logo_path):
+                    img = XLImage(logo_path)
+                    img.width = 100
+                    img.height = 100
+                    ws.add_image(img, "A1")
+                ws.cell(row=1, column=6).value = f"Temple Street Ordering System - {APP_VERSION}"
+                wb.save(forecast_file)
+            except:
+                print("⚠️ Excel branding failed. File still saved.")
 
             po_df = merged[["ingredient", "toorder", "unit"]]
             po_df = po_df[po_df["toorder"] > 0]
@@ -188,6 +225,7 @@ class TempleStreetApp:
             self.root.after(0, self.progress.pack_forget)
 
 def prompt_login():
+    show_splash()
     login_window = tk.Tk()
     login_window.withdraw()
     username = simpledialog.askstring("Login", "Enter your username:")
