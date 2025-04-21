@@ -24,7 +24,7 @@ jobs:
 
       - name: Build .exe with PyInstaller
         run: |
-          python -m PyInstaller --noconfirm --onefile --windowed --icon=assets/temple-street.ico --add-data "assets;assets" main.py
+          python -m PyInstaller --noconfirm --onefile --windowed --icon=assets/temple-street.ico main.py
 
       - name: Upload .exe to GitHub Release
         uses: softprops/action-gh-release@v1
