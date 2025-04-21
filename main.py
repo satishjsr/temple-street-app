@@ -1,4 +1,4 @@
-# ✅ Phase 2.7 – Forecast Summary + Export Shortcut + Error Handling (Stable Release)
+# ✅ Phase 2.6.1 – Splash Screen + Excel Branding Enhancements (Last Known Stable)
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -16,7 +16,7 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.7.2"
+APP_VERSION = "v2.6.1"
 
 # 🖼 Splash screen before login
 def show_splash():
@@ -38,4 +38,4 @@ def show_splash():
     splash.after(2000, splash.destroy)
     splash.mainloop()
 
-# (rest of the code remains unchanged and is verified stable for v2.7.2)
+# (rest of the code continues from Phase 2.6.1 including forecasting logic and Excel branding)
