@@ -1,4 +1,4 @@
-# ✅ Phase 2.6 – Splash Screen + Excel Branding Enhancements
+# ✅ Phase 2.6.1_Stable_AdjustmentFix – Final Phase Correction with Historical Comparison + Purchase Order Archive
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -10,13 +10,14 @@ import webbrowser
 from openpyxl import load_workbook
 from openpyxl.drawing.image import Image as XLImage
 from PIL import ImageTk, Image
+import shutil
 
 USERS = {
     "admin": "admin123",
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.6.0"
+APP_VERSION = "v2.8.8"
 
 # 🖼 Splash screen before login
 def show_splash():
@@ -192,7 +193,6 @@ class TempleStreetApp:
             forecast_file = f"export/Forecast_Purchase_Plan_{target_str}.xlsx"
             merged.to_excel(forecast_file, index=False)
 
-            # ➕ Add logo and footer to Excel forecast file
             try:
                 wb = load_workbook(forecast_file)
                 ws = wb.active
@@ -212,6 +212,12 @@ class TempleStreetApp:
             po_file = f"export/Purchase_Order_{target_str}.xlsx"
             self.purchase_order_file = os.path.abspath(po_file)
             po_df.to_excel(po_file, index=False)
+
+            # 🆕 Archive both files in history folder with subfolder by date
+            archive_root = os.path.join("export", "history", target_str)
+            os.makedirs(archive_root, exist_ok=True)
+            shutil.copy(forecast_file, os.path.join(archive_root, os.path.basename(forecast_file)))
+            shutil.copy(po_file, os.path.join(archive_root, os.path.basename(po_file)))
 
             self.view_order_btn.config(state=tk.NORMAL)
             self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast and Purchase Order ready for {forecast_date.strftime('%d-%b-%Y')}"))
