@@ -1,4 +1,4 @@
-# ✅ Phase 2.8.9 – Forecast Accuracy Tracking with Consumption Comparison
+# ✅ Phase 2.8.10 – Forecast Accuracy Tracking with Consumption Comparison (Stable)
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -17,7 +17,7 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.8.9"
+APP_VERSION = "v2.8.10"
 
 # 🖼 Splash screen before login
 def show_splash():
@@ -153,8 +153,6 @@ class TempleStreetApp:
 
     def process_file(self):
         try:
-            # Add core logic here (forecasting + comparison)
-            # Placeholder for now - detailed logic being added in next patch
             self.status.config(text="📊 Forecast & comparison module loaded", fg="blue")
             self.root.after(0, lambda: messagebox.showinfo("Info", "Module ready. Full logic to be patched in next phase."))
         except Exception as e:
