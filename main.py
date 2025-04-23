@@ -1,4 +1,4 @@
-# ✅ Phase 2.7 – Forecast Accuracy Learning (Final Code)
+# ✅ Phase 2.7 – Forecast Accuracy Learning (Final Code + Error Handling Fix)
 
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
@@ -161,23 +161,27 @@ class TempleStreetApp:
 
             # Insert Forecast Accuracy Logic Here:
             if self.consumption_file_path:
-                sales_df = pd.read_excel(self.sales_file_path)
-                stock_df = pd.read_excel(self.stock_file_path)
-                consumption_df = pd.read_excel(self.consumption_file_path)
+                try:
+                    sales_df = pd.read_excel(self.sales_file_path)
+                    stock_df = pd.read_excel(self.stock_file_path)
+                    consumption_df = pd.read_excel(self.consumption_file_path)
 
-                forecast = sales_df.groupby("Item")["Quantity"].sum().reset_index(name="ForecastedQty")
-                actual = consumption_df.groupby("Item")["ConsumedQty"].sum().reset_index(name="ActualQty")
+                    forecast = sales_df.groupby("Item")["Quantity"].sum().reset_index(name="ForecastedQty")
+                    actual = consumption_df.groupby("Item")["ConsumedQty"].sum().reset_index(name="ActualQty")
 
-                merged = pd.merge(forecast, actual, on="Item", how="left")
-                merged["Accuracy"] = round((merged["ActualQty"] / merged["ForecastedQty"]) * 100, 2)
-                merged.fillna(0, inplace=True)
+                    merged = pd.merge(forecast, actual, on="Item", how="left")
+                    merged["Accuracy"] = round((merged["ActualQty"] / merged["ForecastedQty"]) * 100, 2)
+                    merged.fillna(0, inplace=True)
 
-                export_dir = os.path.abspath("export")
-                os.makedirs(export_dir, exist_ok=True)
-                out_file = os.path.join(export_dir, f"Forecast_vs_Actual_{datetime.now().strftime('%Y-%m-%d')}.xlsx")
-                merged.to_excel(out_file, index=False)
+                    export_dir = os.path.abspath("export")
+                    os.makedirs(export_dir, exist_ok=True)
+                    out_file = os.path.join(export_dir, f"Forecast_vs_Actual_{datetime.now().strftime('%Y-%m-%d')}.xlsx")
+                    merged.to_excel(out_file, index=False)
 
-                self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast Accuracy Report saved:\n{out_file}"))
+                    self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast Accuracy Report saved:\n{out_file}"))
+
+                except Exception as inner_error:
+                    self.root.after(0, lambda: messagebox.showerror("Processing Error", f"Failed to process accuracy: {inner_error}"))
 
         except Exception as e:
             self.root.after(0, lambda: self.status.config(text=f"❌ Error: {e}", fg="red"))
