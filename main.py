@@ -159,7 +159,25 @@ class TempleStreetApp:
             self.root.after(0, lambda: self.status.config(text="Processing..."))
             self.root.after(0, lambda: self.view_order_btn.config(state=tk.DISABLED))
 
-            # (rest of the logic unchanged...)
+            # Insert Forecast Accuracy Logic Here:
+            if self.consumption_file_path:
+                sales_df = pd.read_excel(self.sales_file_path)
+                stock_df = pd.read_excel(self.stock_file_path)
+                consumption_df = pd.read_excel(self.consumption_file_path)
+
+                forecast = sales_df.groupby("Item")["Quantity"].sum().reset_index(name="ForecastedQty")
+                actual = consumption_df.groupby("Item")["ConsumedQty"].sum().reset_index(name="ActualQty")
+
+                merged = pd.merge(forecast, actual, on="Item", how="left")
+                merged["Accuracy"] = round((merged["ActualQty"] / merged["ForecastedQty"]) * 100, 2)
+                merged.fillna(0, inplace=True)
+
+                export_dir = os.path.abspath("export")
+                os.makedirs(export_dir, exist_ok=True)
+                out_file = os.path.join(export_dir, f"Forecast_vs_Actual_{datetime.now().strftime('%Y-%m-%d')}.xlsx")
+                merged.to_excel(out_file, index=False)
+
+                self.root.after(0, lambda: messagebox.showinfo("Success", f"Forecast Accuracy Report saved:\n{out_file}"))
 
         except Exception as e:
             self.root.after(0, lambda: self.status.config(text=f"❌ Error: {e}", fg="red"))
