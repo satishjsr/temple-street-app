@@ -1,34 +1,24 @@
-name: Build Temple Street App (.exe)
+name: Build and Release .exe
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'  # Triggers on tags like v2.8.16
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas openpyxl pyinstaller pillow
-
-      - name: Build .exe with PyInstaller
-        run: |
-          python -m PyInstaller --noconfirm --onefile --windowed --icon=assets/temple-street.ico main.py
-
-      - name: Upload .exe to GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/main.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
