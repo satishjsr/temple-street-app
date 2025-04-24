@@ -1,15 +1,16 @@
-# Phase2.7_Stable_ForecastAccuracy (Enhanced Debugging for EXE Failures)
+# Phase2.7_Stable_ForecastAccuracy (Updated for Specific EXE Directory)
 
 import pandas as pd
 import os
 from datetime import datetime
 import traceback
 
-# GUI-Compatible Accuracy Logic with Debug Logging and Safe Export Path
+# GUI-Compatible Accuracy Logic with Debug Logging and Static Export Path
 def process_forecast_accuracy(sales_file_path, consumption_file_path, export_dir=None):
     try:
+        # Set static export directory based on .exe location
         if export_dir is None:
-            export_dir = os.path.join(os.path.expanduser("~"), "Desktop", "temple_export")
+            export_dir = os.path.join("C:\\Users\\satis\\Downloads", "temple_export")
 
         os.makedirs(export_dir, exist_ok=True)
 
@@ -54,6 +55,6 @@ def process_forecast_accuracy(sales_file_path, consumption_file_path, export_dir
 
 # Standalone test usage
 if __name__ == '__main__':
-    test_sales_path = 'data/test_sales.xlsx'
-    test_consumption_path = 'data/test_consumption.xlsx'
+    test_sales_path = 'C:\\Users\\satis\\Downloads\\test_sales.xlsx'
+    test_consumption_path = 'C:\\Users\\satis\\Downloads\\test_consumption.xlsx'
     process_forecast_accuracy(test_sales_path, test_consumption_path)
