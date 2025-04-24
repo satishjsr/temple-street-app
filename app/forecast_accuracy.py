@@ -1,13 +1,24 @@
-# Phase2.7_Stable_ForecastAccuracy (Error-Logging Version for EXE Debugging)
+# Phase2.7_Stable_ForecastAccuracy (Enhanced Debugging for EXE Failures)
 
 import pandas as pd
 import os
 from datetime import datetime
 import traceback
 
-# GUI-Compatible Accuracy Logic with Debug Logging
-def process_forecast_accuracy(sales_file_path, consumption_file_path, export_dir="export"):
+# GUI-Compatible Accuracy Logic with Debug Logging and Safe Export Path
+def process_forecast_accuracy(sales_file_path, consumption_file_path, export_dir=None):
     try:
+        if export_dir is None:
+            export_dir = os.path.join(os.path.expanduser("~"), "Desktop", "temple_export")
+
+        os.makedirs(export_dir, exist_ok=True)
+
+        debug_log = os.path.join(export_dir, "debug_log.txt")
+        with open(debug_log, "w") as dbg:
+            dbg.write("🔍 Function was called.\n")
+            dbg.write(f"Sales file: {sales_file_path}\n")
+            dbg.write(f"Consumption file: {consumption_file_path}\n")
+
         sales_df = pd.read_excel(sales_file_path)
         consumption_df = pd.read_excel(consumption_file_path)
 
@@ -26,7 +37,6 @@ def process_forecast_accuracy(sales_file_path, consumption_file_path, export_dir
         )
         merged["Accuracy (%)"] = merged["Accuracy (%)"].clip(lower=0, upper=100)
 
-        os.makedirs(export_dir, exist_ok=True)
         out_file = os.path.join(export_dir, f"Forecast_vs_Actual_{datetime.now().strftime('%Y-%m-%d')}.xlsx")
         merged.to_excel(out_file, index=False)
 
@@ -34,7 +44,6 @@ def process_forecast_accuracy(sales_file_path, consumption_file_path, export_dir
         return out_file
 
     except Exception as e:
-        os.makedirs(export_dir, exist_ok=True)
         error_log_path = os.path.join(export_dir, "forecast_error.log")
         with open(error_log_path, "w") as f:
             f.write("❌ Forecast Accuracy Error Log\n")
