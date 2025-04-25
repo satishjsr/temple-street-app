@@ -28,8 +28,8 @@ class TempleStreetApp:
             consumption_file = "consumption_file.xlsx"
             out_file = forecast_accuracy.process_forecast_accuracy(sales_file, consumption_file)
             if out_file:
-                messagebox.showinfo("Success", f"Ingredient Accuracy Report saved at:
-{out_file}")
+messagebox.showinfo("Success", f"Ingredient Accuracy Report saved at:\n{out_file}")
+
             else:
                 messagebox.showerror("Error", "Failed to generate ingredient accuracy report.")
         except Exception as e:
