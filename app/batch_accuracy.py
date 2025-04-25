@@ -89,6 +89,7 @@ def export_accuracy_report_with_chart(df, filename="Batch_Accuracy_Report.xlsx")
     plt.savefig(chart_path)
     print(f"\nReport saved to: {filename}\nChart saved to: {chart_path}")
 
-# Run everything
-display_batch_accuracy_ui(merged)
-export_accuracy_report_with_chart(merged)
+# Run everything only when executed directly
+if __name__ == "__main__":
+    display_batch_accuracy_ui(merged)
+    export_accuracy_report_with_chart(merged)
