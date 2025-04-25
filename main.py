@@ -120,12 +120,15 @@ class TempleStreetApp:
             export_dir = os.path.join("export", today)
             os.makedirs(export_dir, exist_ok=True)
 
-            filename = f"Forecast_Purchase_Order_{timestamp}.xlsx"
-            output_path = os.path.join(export_dir, filename)
-            merged.to_excel(output_path, index=False)
+            forecast_path = os.path.join(export_dir, f"Forecast_Purchase_Plan_{timestamp}.xlsx")
+            po_path = os.path.join(export_dir, f"Purchase_Order_{timestamp}.xlsx")
 
-            self.purchase_order_file = output_path
-            self.status.config(text=f"Forecast and PO saved to {output_path}", fg="darkgreen")
+            merged.to_excel(forecast_path, index=False)
+            po_df = merged[merged['ForecastQty'] > 0]
+            po_df.to_excel(po_path, index=False)
+
+            self.purchase_order_file = po_path
+            self.status.config(text=f"Files saved to export/{today}", fg="darkgreen")
             self.root.after(0, self.view_order_btn.config, {'state': tk.NORMAL})
 
         except Exception as e:
