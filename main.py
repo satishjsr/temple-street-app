@@ -13,7 +13,7 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.9.4"
+APP_VERSION = "v2.9.5"
 
 def show_splash():
     splash = tk.Tk()
@@ -132,7 +132,8 @@ class TempleStreetApp:
             self.root.after(0, self.view_order_btn.config, {'state': tk.NORMAL})
 
         except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred:\n{str(e)}"))
+            error_message = str(e)
+            self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred:\n{error_message}"))
         finally:
             self.root.after(0, self.progress.stop)
             self.root.after(0, self.progress.pack_forget)
