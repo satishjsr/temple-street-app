@@ -72,7 +72,6 @@ def display_batch_accuracy_ui(df):
     print(df[['Raw Material', 'Forecast Quantity', 'Virtual Quantity Used', 'Difference', '% Error', 'Status']])
 
 # Step 7: Generate Excel + Charts
-
 def export_accuracy_report_with_chart(df, filename="Batch_Accuracy_Report.xlsx"):
     # Save to Excel
     df.to_excel(filename, index=False)
