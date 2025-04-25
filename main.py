@@ -3,12 +3,8 @@ import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
 import pandas as pd
 import os
-from datetime import datetime
 import threading
 import webbrowser
-from openpyxl import load_workbook
-from PIL import ImageTk, Image
-import shutil
 from app import batch_accuracy
 
 USERS = {
@@ -106,8 +102,7 @@ class TempleStreetApp:
 
     def send_via_whatsapp(self):
         export_dir = os.path.abspath("export")
-        messagebox.showinfo("Manual Step", f"Share files from:
-{export_dir}")
+        messagebox.showinfo("Manual Step", f"Share files from:\n{export_dir}")
         webbrowser.open(export_dir)
 
     def process_file(self):
