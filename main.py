@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import threading
 import webbrowser
+from datetime import datetime
 from app import batch_accuracy
 
 USERS = {
@@ -12,7 +13,7 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.9.3"
+APP_VERSION = "v2.9.4"
 
 def show_splash():
     splash = tk.Tk()
@@ -114,12 +115,17 @@ class TempleStreetApp:
             merged['ForecastQty'] = merged['SalesQty'] * float(self.adjust_entry.get()) / 100 - merged['CurrentStock']
             merged['ForecastQty'] = merged['ForecastQty'].apply(lambda x: max(x, 0))
 
-            os.makedirs("export", exist_ok=True)
-            output_path = os.path.join("export", "Final_Purchase_Order.xlsx")
+            today = datetime.now().strftime("%Y-%m-%d")
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            export_dir = os.path.join("export", today)
+            os.makedirs(export_dir, exist_ok=True)
+
+            filename = f"Forecast_Purchase_Order_{timestamp}.xlsx"
+            output_path = os.path.join(export_dir, filename)
             merged.to_excel(output_path, index=False)
 
             self.purchase_order_file = output_path
-            self.status.config(text="Forecast and PO generated successfully!", fg="darkgreen")
+            self.status.config(text=f"Forecast and PO saved to {output_path}", fg="darkgreen")
             self.root.after(0, self.view_order_btn.config, {'state': tk.NORMAL})
 
         except Exception as e:
