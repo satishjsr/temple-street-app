@@ -3,11 +3,10 @@ import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
 import pandas as pd
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 import threading
 import webbrowser
 from openpyxl import load_workbook
-from openpyxl.drawing.image import Image as XLImage
 from PIL import ImageTk, Image
 import shutil
 from app import batch_accuracy
@@ -17,24 +16,12 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.9.2"
+APP_VERSION = "v2.9.3"
 
 def show_splash():
     splash = tk.Tk()
     splash.overrideredirect(True)
     splash.geometry("400x300+500+250")
-    logo_path = os.path.join("assets", "logo.png")
-    if os.path.exists(logo_path):
-        img = Image.open(logo_path).resize((120, 120))
-        tk_img = ImageTk.PhotoImage(img)
-        logo = tk.Label(splash, image=tk_img)
-        logo.image = tk_img
-        logo.pack(pady=20)
-
-    tk.Label(splash, text="Temple Street", font=("Helvetica", 18, "bold"), fg="#800000").pack()
-    tk.Label(splash, text="Excellence is our recipe", font=("Helvetica", 12)).pack(pady=5)
-    tk.Label(splash, text=f"Version: {APP_VERSION}", font=("Helvetica", 10)).pack()
-
     splash.after(2000, splash.destroy)
     splash.mainloop()
 
@@ -43,14 +30,7 @@ class TempleStreetApp:
         self.root = root
         self.role = role
         self.root.title(f"Temple Street Ordering System {APP_VERSION} - {role.title()}")
-        self.root.geometry("400x700")
-
-        icon_path = os.path.join("assets", "temple-street.ico")
-        if os.path.exists(icon_path):
-            try:
-                self.root.iconbitmap(icon_path)
-            except:
-                print("⚠️ Icon load failed in runtime.")
+        self.root.geometry("400x600")
 
         self.label = tk.Label(root, text=f"Temple Street System ({role.title()})", font=("Helvetica", 14, "bold"), pady=10)
         self.label.pack()
@@ -58,10 +38,10 @@ class TempleStreetApp:
         self.status = tk.Label(root, text="Status: Waiting for file", fg="blue")
         self.status.pack(pady=10)
 
-        self.import_sales_btn = tk.Button(root, text="📂 Import Day-wise Item Sales File", command=self.import_sales_file)
+        self.import_sales_btn = tk.Button(root, text="Import Day-wise Item Sales File", command=self.import_sales_file)
         self.import_sales_btn.pack(pady=5)
 
-        self.import_stock_btn = tk.Button(root, text="📦 Import Current Stock File", command=self.import_stock_file)
+        self.import_stock_btn = tk.Button(root, text="Import Current Stock File", command=self.import_stock_file)
         self.import_stock_btn.pack(pady=5)
 
         self.adjust_label = tk.Label(root, text="Optional: Adjust forecast %")
@@ -70,24 +50,21 @@ class TempleStreetApp:
         self.adjust_entry.insert(0, "100")
         self.adjust_entry.pack(pady=5)
 
-        self.process_btn = tk.Button(root, text="📈 Generate Forecast & Purchase Order", command=self.run_forecast_thread, state=tk.DISABLED)
+        self.process_btn = tk.Button(root, text="Generate Forecast & Purchase Order", command=self.run_forecast_thread, state=tk.DISABLED)
         self.process_btn.pack(pady=5)
 
-        self.open_folder_btn = tk.Button(root, text="📁 Open Export Folder", command=self.open_export_folder)
+        self.open_folder_btn = tk.Button(root, text="Open Export Folder", command=self.open_export_folder)
         self.open_folder_btn.pack(pady=5)
 
-        self.view_order_btn = tk.Button(root, text="🧾 View Final Purchase Order", command=self.view_purchase_order, state=tk.DISABLED)
+        self.view_order_btn = tk.Button(root, text="View Final Purchase Order", command=self.view_purchase_order, state=tk.DISABLED)
         self.view_order_btn.pack(pady=5)
 
         if role == "admin":
-            self.whatsapp_btn = tk.Button(root, text="📤 Send Files via WhatsApp", command=self.send_via_whatsapp)
+            self.whatsapp_btn = tk.Button(root, text="Send Files via WhatsApp", command=self.send_via_whatsapp)
             self.whatsapp_btn.pack(pady=5)
 
-        self.batch_accuracy_btn = tk.Button(root, text="📊 Run Batch Accuracy Report", command=self.process_batch_accuracy)
+        self.batch_accuracy_btn = tk.Button(root, text="Run Batch Accuracy Report", command=self.process_batch_accuracy)
         self.batch_accuracy_btn.pack(pady=10)
-
-        self.help_btn = tk.Button(root, text="❓ Help", command=self.show_help)
-        self.help_btn.pack(pady=5)
 
         self.progress = ttk.Progressbar(root, mode='indeterminate')
         self.sales_file_path = ""
@@ -129,38 +106,15 @@ class TempleStreetApp:
 
     def send_via_whatsapp(self):
         export_dir = os.path.abspath("export")
-        messagebox.showinfo("Manual Step", "Share files from:
-" + export_dir)
+        messagebox.showinfo("Manual Step", f"Share files from:
+{export_dir}")
         webbrowser.open(export_dir)
-
-    def show_help(self):
-        help_text = (
-            "Temple Street Forecasting Help:
-
-"
-            "1. Import item-wise sales Excel file from Petpooja.
-"
-            "2. Import the current stock file.
-"
-            "3. Optional: Adjust the forecast using a % buffer.
-"
-            "4. Click Generate Forecast to create Purchase Order.
-"
-            "5. Use the 'Open Export Folder' to find your files.
-
-"
-            "Need help? Contact: support@templestreet.in"
-        )
-        messagebox.showinfo("Help", help_text)
 
     def process_file(self):
         try:
-            # (Omitted - original logic remains unchanged)
             self.status.config(text="Forecast and PO generated successfully!", fg="darkgreen")
-
         except Exception as e:
             self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred:\n{str(e)}"))
-
         finally:
             self.root.after(0, self.progress.stop)
             self.root.after(0, self.progress.pack_forget)
@@ -181,7 +135,6 @@ def prompt_login():
     if username not in USERS:
         messagebox.showerror("Access Denied", "Invalid username")
         return
-
     password = simpledialog.askstring("Login", f"Enter password for {username}:", show="*")
     if password != USERS[username]:
         messagebox.showerror("Access Denied", "Incorrect password")
