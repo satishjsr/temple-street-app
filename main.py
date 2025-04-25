@@ -107,7 +107,21 @@ class TempleStreetApp:
 
     def process_file(self):
         try:
+            sales_df = pd.read_excel(self.sales_file_path)
+            stock_df = pd.read_excel(self.stock_file_path)
+
+            merged = pd.merge(sales_df, stock_df, on='Item', how='left')
+            merged['ForecastQty'] = merged['SalesQty'] * float(self.adjust_entry.get()) / 100 - merged['CurrentStock']
+            merged['ForecastQty'] = merged['ForecastQty'].apply(lambda x: max(x, 0))
+
+            os.makedirs("export", exist_ok=True)
+            output_path = os.path.join("export", "Final_Purchase_Order.xlsx")
+            merged.to_excel(output_path, index=False)
+
+            self.purchase_order_file = output_path
             self.status.config(text="Forecast and PO generated successfully!", fg="darkgreen")
+            self.root.after(0, self.view_order_btn.config, {'state': tk.NORMAL})
+
         except Exception as e:
             self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred:\n{str(e)}"))
         finally:
