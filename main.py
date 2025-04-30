@@ -13,7 +13,7 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.9.9"
+APP_VERSION = "v2.9.10"
 
 def show_splash():
     splash = tk.Tk()
@@ -120,7 +120,7 @@ class TempleStreetApp:
     def process_file(self):
         try:
             expected_items = ['item', 'item name', 'raw material', 'product', 'menu item', 'dish']
-            expected_qty_sales = ['qty sold', 'quantity', 'salesqty', 'qty']
+            expected_qty_sales = ['qty', 'quantity', 'qty sold', 'total qty', 'salesqty']
             expected_qty_stock = ['available quantity', 'current stock', 'stock qty', 'qty']
 
             sales_df = self.read_clean_excel(self.sales_file_path, expected_items + expected_qty_sales)
@@ -132,9 +132,9 @@ class TempleStreetApp:
             qty_col_stock = next((c for c in expected_qty_stock if c in stock_df.columns), None)
 
             if not item_col_sales or not item_col_stock:
-                raise Exception(f"Item column not found. Sales columns: {sales_df.columns}. Stock columns: {stock_df.columns}")
+                raise Exception(f"[Item Column Missing]\nSales columns: {sales_df.columns}\nStock columns: {stock_df.columns}")
             if not qty_col_sales or not qty_col_stock:
-                raise Exception(f"Quantity column not found. Sales columns: {sales_df.columns}. Stock columns: {stock_df.columns}")
+                raise Exception(f"[Quantity Column Missing]\nSales columns: {sales_df.columns}\nStock columns: {stock_df.columns}")
 
             sales_df.rename(columns={item_col_sales: 'item', qty_col_sales: 'salesqty'}, inplace=True)
             stock_df.rename(columns={item_col_stock: 'item', qty_col_stock: 'currentstock'}, inplace=True)
