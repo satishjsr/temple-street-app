@@ -13,7 +13,7 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.9.8"
+APP_VERSION = "v2.9.9"
 
 def show_splash():
     splash = tk.Tk()
@@ -106,24 +106,30 @@ class TempleStreetApp:
         messagebox.showinfo("Manual Step", f"Share files from:\n{export_dir}")
         webbrowser.open(export_dir)
 
+    def read_clean_excel(self, filepath, expected_headers):
+        for i in range(0, 10):
+            try:
+                df = pd.read_excel(filepath, header=i)
+                df.columns = [str(c).strip().lower() for c in df.columns]
+                if any(h in df.columns for h in expected_headers):
+                    return df.dropna(axis=1, how='all')
+            except Exception:
+                continue
+        raise Exception(f"Could not detect proper headers in file: {filepath}")
+
     def process_file(self):
         try:
-            sales_df = pd.read_excel(self.sales_file_path)
-            stock_df = pd.read_excel(self.stock_file_path)
+            expected_items = ['item', 'item name', 'raw material', 'product', 'menu item', 'dish']
+            expected_qty_sales = ['qty sold', 'quantity', 'salesqty', 'qty']
+            expected_qty_stock = ['available quantity', 'current stock', 'stock qty', 'qty']
 
-            # Normalize column headers
-            sales_df.columns = [col.strip().lower() for col in sales_df.columns]
-            stock_df.columns = [col.strip().lower() for col in stock_df.columns]
+            sales_df = self.read_clean_excel(self.sales_file_path, expected_items + expected_qty_sales)
+            stock_df = self.read_clean_excel(self.stock_file_path, expected_items + expected_qty_stock)
 
-            item_aliases = ['item', 'item name', 'raw material', 'product', 'menu item', 'dish']
-            qty_aliases_sales = ['qty sold', 'quantity', 'salesqty', 'qty']
-            qty_aliases_stock = ['available quantity', 'current stock', 'stock qty', 'qty']
-
-            # Map item column
-            item_col_sales = next((col for col in item_aliases if col in sales_df.columns), None)
-            item_col_stock = next((col for col in item_aliases if col in stock_df.columns), None)
-            qty_col_sales = next((col for col in qty_aliases_sales if col in sales_df.columns), None)
-            qty_col_stock = next((col for col in qty_aliases_stock if col in stock_df.columns), None)
+            item_col_sales = next((c for c in expected_items if c in sales_df.columns), None)
+            item_col_stock = next((c for c in expected_items if c in stock_df.columns), None)
+            qty_col_sales = next((c for c in expected_qty_sales if c in sales_df.columns), None)
+            qty_col_stock = next((c for c in expected_qty_stock if c in stock_df.columns), None)
 
             if not item_col_sales or not item_col_stock:
                 raise Exception(f"Item column not found. Sales columns: {sales_df.columns}. Stock columns: {stock_df.columns}")
