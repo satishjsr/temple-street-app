@@ -7,20 +7,17 @@ import threading
 import webbrowser
 from datetime import datetime
 from app import batch_accuracy
+import re
 
 USERS = {
     "admin": "admin123",
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.9.10"
+APP_VERSION = "v2.9.11"
 
-def show_splash():
-    splash = tk.Tk()
-    splash.overrideredirect(True)
-    splash.geometry("400x300+500+250")
-    splash.after(2000, splash.destroy)
-    splash.mainloop()
+def clean_column_name(name):
+    return re.sub(r'[^a-z0-9]', '', str(name).strip().lower())
 
 class TempleStreetApp:
     def __init__(self, root, role):
@@ -28,42 +25,34 @@ class TempleStreetApp:
         self.role = role
         self.root.title(f"Temple Street Ordering System {APP_VERSION} - {role.title()}")
         self.root.geometry("400x600")
+        self.setup_ui()
 
-        self.label = tk.Label(root, text=f"Temple Street System ({role.title()})", font=("Helvetica", 14, "bold"), pady=10)
-        self.label.pack()
-
-        self.status = tk.Label(root, text="Status: Waiting for file", fg="blue")
+    def setup_ui(self):
+        tk.Label(self.root, text=f"Temple Street System ({self.role.title()})", font=("Helvetica", 14, "bold"), pady=10).pack()
+        self.status = tk.Label(self.root, text="Status: Waiting for file", fg="blue")
         self.status.pack(pady=10)
 
-        self.import_sales_btn = tk.Button(root, text="Import Day-wise Item Sales File", command=self.import_sales_file)
-        self.import_sales_btn.pack(pady=5)
+        tk.Button(self.root, text="Import Day-wise Item Sales File", command=self.import_sales_file).pack(pady=5)
+        tk.Button(self.root, text="Import Current Stock File", command=self.import_stock_file).pack(pady=5)
 
-        self.import_stock_btn = tk.Button(root, text="Import Current Stock File", command=self.import_stock_file)
-        self.import_stock_btn.pack(pady=5)
-
-        self.adjust_label = tk.Label(root, text="Optional: Adjust forecast %")
-        self.adjust_label.pack(pady=(10,0))
-        self.adjust_entry = tk.Entry(root)
+        tk.Label(self.root, text="Optional: Adjust forecast %").pack(pady=(10,0))
+        self.adjust_entry = tk.Entry(self.root)
         self.adjust_entry.insert(0, "100")
         self.adjust_entry.pack(pady=5)
 
-        self.process_btn = tk.Button(root, text="Generate Forecast & Purchase Order", command=self.run_forecast_thread, state=tk.DISABLED)
+        self.process_btn = tk.Button(self.root, text="Generate Forecast & Purchase Order", command=self.run_forecast_thread, state=tk.DISABLED)
         self.process_btn.pack(pady=5)
 
-        self.open_folder_btn = tk.Button(root, text="Open Export Folder", command=self.open_export_folder)
-        self.open_folder_btn.pack(pady=5)
-
-        self.view_order_btn = tk.Button(root, text="View Final Purchase Order", command=self.view_purchase_order, state=tk.DISABLED)
+        tk.Button(self.root, text="Open Export Folder", command=self.open_export_folder).pack(pady=5)
+        self.view_order_btn = tk.Button(self.root, text="View Final Purchase Order", command=self.view_purchase_order, state=tk.DISABLED)
         self.view_order_btn.pack(pady=5)
 
-        if role == "admin":
-            self.whatsapp_btn = tk.Button(root, text="Send Files via WhatsApp", command=self.send_via_whatsapp)
-            self.whatsapp_btn.pack(pady=5)
+        if self.role == "admin":
+            tk.Button(self.root, text="Send Files via WhatsApp", command=self.send_via_whatsapp).pack(pady=5)
 
-        self.batch_accuracy_btn = tk.Button(root, text="Run Batch Accuracy Report", command=self.process_batch_accuracy)
-        self.batch_accuracy_btn.pack(pady=10)
+        tk.Button(self.root, text="Run Batch Accuracy Report", command=self.process_batch_accuracy).pack(pady=10)
 
-        self.progress = ttk.Progressbar(root, mode='indeterminate')
+        self.progress = ttk.Progressbar(self.root, mode='indeterminate')
         self.sales_file_path = ""
         self.stock_file_path = ""
         self.purchase_order_file = ""
@@ -106,35 +95,36 @@ class TempleStreetApp:
         messagebox.showinfo("Manual Step", f"Share files from:\n{export_dir}")
         webbrowser.open(export_dir)
 
-    def read_clean_excel(self, filepath, expected_headers):
-        for i in range(0, 10):
+    def smart_read_excel(self, filepath, expected_cols):
+        for header in range(0, 10):
             try:
-                df = pd.read_excel(filepath, header=i)
-                df.columns = [str(c).strip().lower() for c in df.columns]
-                if any(h in df.columns for h in expected_headers):
-                    return df.dropna(axis=1, how='all')
+                df = pd.read_excel(filepath, header=header)
+                cleaned_cols = [clean_column_name(c) for c in df.columns]
+                if any(col in cleaned_cols for col in expected_cols):
+                    df.columns = cleaned_cols
+                    return df
             except Exception:
                 continue
-        raise Exception(f"Could not detect proper headers in file: {filepath}")
+        raise Exception(f"No usable header row found in: {filepath}")
 
     def process_file(self):
         try:
-            expected_items = ['item', 'item name', 'raw material', 'product', 'menu item', 'dish']
-            expected_qty_sales = ['qty', 'quantity', 'qty sold', 'total qty', 'salesqty']
-            expected_qty_stock = ['available quantity', 'current stock', 'stock qty', 'qty']
+            expected_item_keys = ['item', 'itemname', 'rawmaterial', 'dish']
+            expected_qty_sales_keys = ['qty', 'quantity', 'qtysold', 'salesqty', 'totalqty']
+            expected_qty_stock_keys = ['availablequantity', 'currentstock', 'stockqty']
 
-            sales_df = self.read_clean_excel(self.sales_file_path, expected_items + expected_qty_sales)
-            stock_df = self.read_clean_excel(self.stock_file_path, expected_items + expected_qty_stock)
+            sales_df = self.smart_read_excel(self.sales_file_path, expected_item_keys + expected_qty_sales_keys)
+            stock_df = self.smart_read_excel(self.stock_file_path, expected_item_keys + expected_qty_stock_keys)
 
-            item_col_sales = next((c for c in expected_items if c in sales_df.columns), None)
-            item_col_stock = next((c for c in expected_items if c in stock_df.columns), None)
-            qty_col_sales = next((c for c in expected_qty_sales if c in sales_df.columns), None)
-            qty_col_stock = next((c for c in expected_qty_stock if c in stock_df.columns), None)
+            item_col_sales = next((c for c in sales_df.columns if c in expected_item_keys), None)
+            qty_col_sales = next((c for c in sales_df.columns if c in expected_qty_sales_keys), None)
+            item_col_stock = next((c for c in stock_df.columns if c in expected_item_keys), None)
+            qty_col_stock = next((c for c in stock_df.columns if c in expected_qty_stock_keys), None)
 
-            if not item_col_sales or not item_col_stock:
-                raise Exception(f"[Item Column Missing]\nSales columns: {sales_df.columns}\nStock columns: {stock_df.columns}")
-            if not qty_col_sales or not qty_col_stock:
-                raise Exception(f"[Quantity Column Missing]\nSales columns: {sales_df.columns}\nStock columns: {stock_df.columns}")
+            if not item_col_sales or not qty_col_sales:
+                raise Exception(f"[Sales file missing expected columns]\nColumns: {sales_df.columns}")
+            if not item_col_stock or not qty_col_stock:
+                raise Exception(f"[Stock file missing expected columns]\nColumns: {stock_df.columns}")
 
             sales_df.rename(columns={item_col_sales: 'item', qty_col_sales: 'salesqty'}, inplace=True)
             stock_df.rename(columns={item_col_stock: 'item', qty_col_stock: 'currentstock'}, inplace=True)
@@ -160,8 +150,7 @@ class TempleStreetApp:
             self.root.after(0, self.view_order_btn.config, {'state': tk.NORMAL})
 
         except Exception as e:
-            error_message = str(e)
-            self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred:\n{error_message}"))
+            self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred:\n{e}"))
         finally:
             self.root.after(0, self.progress.stop)
             self.root.after(0, self.progress.pack_forget)
@@ -175,9 +164,8 @@ class TempleStreetApp:
             messagebox.showerror("Error", str(e))
 
 def prompt_login():
-    show_splash()
-    login_window = tk.Tk()
-    login_window.withdraw()
+    login = tk.Tk()
+    login.withdraw()
     username = simpledialog.askstring("Login", "Enter your username:")
     if username not in USERS:
         messagebox.showerror("Access Denied", "Invalid username")
@@ -186,7 +174,6 @@ def prompt_login():
     if password != USERS[username]:
         messagebox.showerror("Access Denied", "Incorrect password")
         return
-
     root = tk.Tk()
     app = TempleStreetApp(root, role=username)
     root.mainloop()
