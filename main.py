@@ -13,7 +13,7 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.9.7"
+APP_VERSION = "v2.9.8"
 
 def show_splash():
     splash = tk.Tk()
@@ -111,25 +111,29 @@ class TempleStreetApp:
             sales_df = pd.read_excel(self.sales_file_path)
             stock_df = pd.read_excel(self.stock_file_path)
 
-            # Normalize column names
+            # Normalize column headers
             sales_df.columns = [col.strip().lower() for col in sales_df.columns]
             stock_df.columns = [col.strip().lower() for col in stock_df.columns]
 
-            # Rename common aliases to 'item'
-            for alias in ['item name', 'menu item', 'dish']:
-                if alias in sales_df.columns:
-                    sales_df.rename(columns={alias: 'item'}, inplace=True)
-                    break
-            for alias in ['item name', 'menu item', 'dish']:
-                if alias in stock_df.columns:
-                    stock_df.rename(columns={alias: 'item'}, inplace=True)
-                    break
+            item_aliases = ['item', 'item name', 'raw material', 'product', 'menu item', 'dish']
+            qty_aliases_sales = ['qty sold', 'quantity', 'salesqty', 'qty']
+            qty_aliases_stock = ['available quantity', 'current stock', 'stock qty', 'qty']
 
-            if 'item' not in sales_df.columns or 'item' not in stock_df.columns:
-                raise Exception("Missing 'Item' or its aliases in sales or stock file.")
+            # Map item column
+            item_col_sales = next((col for col in item_aliases if col in sales_df.columns), None)
+            item_col_stock = next((col for col in item_aliases if col in stock_df.columns), None)
+            qty_col_sales = next((col for col in qty_aliases_sales if col in sales_df.columns), None)
+            qty_col_stock = next((col for col in qty_aliases_stock if col in stock_df.columns), None)
+
+            if not item_col_sales or not item_col_stock:
+                raise Exception(f"Item column not found. Sales columns: {sales_df.columns}. Stock columns: {stock_df.columns}")
+            if not qty_col_sales or not qty_col_stock:
+                raise Exception(f"Quantity column not found. Sales columns: {sales_df.columns}. Stock columns: {stock_df.columns}")
+
+            sales_df.rename(columns={item_col_sales: 'item', qty_col_sales: 'salesqty'}, inplace=True)
+            stock_df.rename(columns={item_col_stock: 'item', qty_col_stock: 'currentstock'}, inplace=True)
 
             merged = pd.merge(sales_df, stock_df, on='item', how='left')
-
             merged['forecastqty'] = merged['salesqty'] * float(self.adjust_entry.get()) / 100 - merged['currentstock']
             merged['forecastqty'] = merged['forecastqty'].apply(lambda x: max(x, 0))
 
