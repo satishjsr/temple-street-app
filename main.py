@@ -150,7 +150,7 @@ class TempleStreetApp:
             self.root.after(0, self.view_order_btn.config, {'state': tk.NORMAL})
 
         except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred:\n{e}"))
+            self.root.after(0, lambda e=e: messagebox.showerror("Error", f"An error occurred:\n{e}"))
         finally:
             self.root.after(0, self.progress.stop)
             self.root.after(0, self.progress.pack_forget)
