@@ -13,7 +13,7 @@ USERS = {
     "staff": "staff123"
 }
 
-APP_VERSION = "v2.9.5"
+APP_VERSION = "v2.9.7"
 
 def show_splash():
     splash = tk.Tk()
@@ -111,9 +111,27 @@ class TempleStreetApp:
             sales_df = pd.read_excel(self.sales_file_path)
             stock_df = pd.read_excel(self.stock_file_path)
 
-            merged = pd.merge(sales_df, stock_df, on='Item', how='left')
-            merged['ForecastQty'] = merged['SalesQty'] * float(self.adjust_entry.get()) / 100 - merged['CurrentStock']
-            merged['ForecastQty'] = merged['ForecastQty'].apply(lambda x: max(x, 0))
+            # Normalize column names
+            sales_df.columns = [col.strip().lower() for col in sales_df.columns]
+            stock_df.columns = [col.strip().lower() for col in stock_df.columns]
+
+            # Rename common aliases to 'item'
+            for alias in ['item name', 'menu item', 'dish']:
+                if alias in sales_df.columns:
+                    sales_df.rename(columns={alias: 'item'}, inplace=True)
+                    break
+            for alias in ['item name', 'menu item', 'dish']:
+                if alias in stock_df.columns:
+                    stock_df.rename(columns={alias: 'item'}, inplace=True)
+                    break
+
+            if 'item' not in sales_df.columns or 'item' not in stock_df.columns:
+                raise Exception("Missing 'Item' or its aliases in sales or stock file.")
+
+            merged = pd.merge(sales_df, stock_df, on='item', how='left')
+
+            merged['forecastqty'] = merged['salesqty'] * float(self.adjust_entry.get()) / 100 - merged['currentstock']
+            merged['forecastqty'] = merged['forecastqty'].apply(lambda x: max(x, 0))
 
             today = datetime.now().strftime("%Y-%m-%d")
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -124,7 +142,7 @@ class TempleStreetApp:
             po_path = os.path.join(export_dir, f"Purchase_Order_{timestamp}.xlsx")
 
             merged.to_excel(forecast_path, index=False)
-            po_df = merged[merged['ForecastQty'] > 0]
+            po_df = merged[merged['forecastqty'] > 0]
             po_df.to_excel(po_path, index=False)
 
             self.purchase_order_file = po_path
