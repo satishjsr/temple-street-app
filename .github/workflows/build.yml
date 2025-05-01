@@ -1,5 +1,4 @@
-
-name: Build & Release EXE
+name: Build Temple Street EXE
 
 on:
   release:
@@ -12,7 +11,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout Repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Set up Python
@@ -26,19 +25,22 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
-    - name: Build EXE using PyInstaller
+    - name: Build using PyInstaller and .spec
       shell: bash
       run: |
-        pyinstaller --onefile main.py --clean --distpath dist \
-          --add-data "app/batch_accuracy.py;app" \
-          --add-data "app/forecast_accuracy.py;app" \
-          --add-data "app/forecast_engine.py;app" \
-          --add-data "export;export"
+        pyinstaller main.spec --clean --distpath dist
+
+    - name: Verify build output
+      run: |
+        if [ ! -f dist/TempleStreetForecast.exe ]; then
+          echo "ERROR: EXE not found. Build failed."
+          exit 1
+        fi
 
     - name: Upload EXE to Release
       if: github.event_name == 'release'
       uses: softprops/action-gh-release@v1
       with:
-        files: dist/main.exe
+        files: dist/TempleStreetForecast.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
