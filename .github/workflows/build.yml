@@ -27,6 +27,7 @@ jobs:
         pip install pyinstaller
 
     - name: Build EXE using PyInstaller
+      shell: bash
       run: |
         pyinstaller --onefile main.py --clean --distpath dist \
           --add-data "batch_accuracy.py;." \
