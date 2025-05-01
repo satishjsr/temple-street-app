@@ -1,3 +1,4 @@
+
 name: Build & Release EXE
 
 on:
@@ -27,7 +28,11 @@ jobs:
 
     - name: Build EXE using PyInstaller
       run: |
-        pyinstaller --onefile main.py --distpath dist --clean
+        pyinstaller --onefile main.py --clean --distpath dist \
+          --add-data "batch_accuracy.py;." \
+          --add-data "app.py;." \
+          --add-data "forecast_accuracy.py;." \
+          --add-data "export;export"
 
     - name: Upload EXE to Release
       if: github.event_name == 'release'
