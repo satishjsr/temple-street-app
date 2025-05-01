@@ -30,9 +30,9 @@ jobs:
       shell: bash
       run: |
         pyinstaller --onefile main.py --clean --distpath dist \
-          --add-data "batch_accuracy.py;." \
-          --add-data "app.py;." \
-          --add-data "forecast_accuracy.py;." \
+          --add-data "app/batch_accuracy.py;app" \
+          --add-data "app/forecast_accuracy.py;app" \
+          --add-data "app/forecast_engine.py;app" \
           --add-data "export;export"
 
     - name: Upload EXE to Release
