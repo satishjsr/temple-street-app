@@ -26,3 +26,7 @@ def smart_read_excel(filepath, required_cols):
         except Exception:
             continue
     raise Exception(f"CleanScan failed: Required columns {required_cols} not found in any of first 10 rows.")
+
+
+if __name__ == "__main__":
+    prompt_login()
